@@ -1,0 +1,57 @@
+{
+  "name": "kubeform",
+  "version": "1.0.0",
+  "description": "a module for programatically provisioning kubernetes clusters via cloud provider APIs",
+  "main": "src/index.js",
+  "dependencies": {
+    "@google-cloud/common": "^0.20.1",
+    "@google-cloud/container": "^0.2.0",
+    "@google-cloud/resource": "^0.8.1",
+    "@google-cloud/storage": "^1.7.0",
+    "bluebird": "^3.5.1",
+    "bole": "^3.0.2",
+    "joi": "^13.4.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "coveralls": "^3.0.1",
+    "mocha": "^5.2.0",
+    "nock": "^9.4.1",
+    "nyc": "^12.0.2",
+    "sinon": "^6.0.0",
+    "sinon-chai": "^3.2.0",
+    "standard": "^11.0.1",
+    "standard-version": "^4.4.0"
+  },
+  "scripts": {
+    "pretest": "standard",
+    "test": "node_modules/mocha/bin/mocha ./spec/*.spec.js",
+    "coverage": "nyc npm test",
+    "release": "standard-version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/npm-wharf/kubeform.git"
+  },
+  "keywords": [
+    "kubernetes",
+    "initialization"
+  ],
+  "author": "Alex Robson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/npm-wharf/kubeform/issues"
+  },
+  "homepage": "https://github.com/npm-wharf/kubeform#readme",
+  "standard": {
+    "env": [
+      "mocha"
+    ],
+    "global": [
+      "nock",
+      "sinon",
+      "expect"
+    ]
+  }
+}

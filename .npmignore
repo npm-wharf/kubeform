@@ -1,0 +1,8 @@
+coverage/
+node_modules/
+.nyc_output/
+package-lock.json
+spec/
+gs-auth.json
+gs-test-meta.js
+test.js
