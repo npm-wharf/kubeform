@@ -1,7 +1,30 @@
 require('./setup')
 const IAM = require('../src/google/iam')
 
+const OAUTH_URL = 'https://www.googleapis.com/oauth2/v4/token'
+const REVOKE_URL = 'https://accounts.google.com/o/oauth2/revoke?token='
+
+function setAuthResponse (scope) {
+  scope.post('', x => {
+    return true
+  }).reply(200, { access_token: 'ya29.test' })
+}
+
+function setRevokeResponse (scope) {
+  scope.post(() => true, () => true)
+    .reply(200, {})
+}
+
 describe('Google IAM', function () {
+  let authScope
+  let revokeScope
+
+  before(function () {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = './spec/keys/testkey.json'
+    authScope = nock(OAUTH_URL)
+    revokeScope = nock(REVOKE_URL)
+  })
+
   describe('when creating a service account', function () {
     let scope
     let iam
@@ -19,6 +42,8 @@ describe('Google IAM', function () {
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
     })
 
     describe('and error occurs', function () {
@@ -78,6 +103,8 @@ describe('Google IAM', function () {
     let scope
     let iam
     before(function () {
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
       scope = nock('https://iam.googleapis.com/v1')
         .matchHeader('authorization', (val) => {
           // the bearer token changes each time because
@@ -135,6 +162,8 @@ describe('Google IAM', function () {
     let scope
     let iam
     before(function () {
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
       scope = nock('https://cloudresourcemanager.googleapis.com/v1')
         .matchHeader('authorization', (val) => {
           // the bearer token changes each time because
@@ -212,6 +241,8 @@ describe('Google IAM', function () {
     let existing1, existing2, existing3
     let combined1, combined2
     before(function () {
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
       scope = nock('https://cloudresourcemanager.googleapis.com/v1')
         .matchHeader('authorization', (val) => {
           // the bearer token changes each time because
@@ -419,6 +450,8 @@ describe('Google IAM', function () {
     let scope
     let iam
     before(function () {
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
       scope = nock('https://cloudbilling.googleapis.com/v1')
         .matchHeader('authorization', (val) => {
           // the bearer token changes each time because
@@ -481,6 +514,8 @@ describe('Google IAM', function () {
     let iam
     let scope
     before(function () {
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
       scope = nock('https://servicemanagement.googleapis.com/v1')
         .matchHeader('authorization', (val) => {
           // the bearer token changes each time because
@@ -535,6 +570,7 @@ describe('Google IAM', function () {
     })
 
     after(function () {
+      delete process.env.GOOGLE_APPLICATION_CREDENTIALS
       nock.cleanAll()
     })
   })
