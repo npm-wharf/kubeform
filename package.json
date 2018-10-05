@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "a module for programatically provisioning kubernetes clusters via cloud provider APIs",
   "main": "src/index.js",
+  "bin": {
+    "kubeform": "./bin/kubeform.js"
+  },
   "dependencies": {
     "@google-cloud/common": "^0.20.1",
     "@google-cloud/container": "^0.2.0",
@@ -10,7 +13,8 @@
     "@google-cloud/storage": "^1.7.0",
     "bluebird": "^3.5.1",
     "bole": "^3.0.2",
-    "joi": "^13.4.0"
+    "joi": "^13.4.0",
+    "yargs": "^12.0.2"
   },
   "devDependencies": {
     "chai": "^4.1.2",

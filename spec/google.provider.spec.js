@@ -19,6 +19,7 @@ const iam = {
 
 const clusters = {
   createCluster: () => {},
+  getCluster: () => {},
   getOperation: () => {}
 }
 
@@ -39,11 +40,12 @@ describe('Google Provider', function () {
   let clusterCreated
   let roles
   let finalRoles
-  let initialSetupRoles
-  let finalSetupRoles
+  let initialAccessRoles
+  let initialRolesSet
+  let finalAccessRoles
   before(function () {
     clusterOptions = {
-      name: 'test',
+      name: 'npme-test',
       user: 'admin',
       password: 'admin', // somewhere, a infosec professional is screaming
       projectId: 'test-project',
@@ -90,7 +92,7 @@ describe('Google Provider', function () {
       projectId: 'test-project',
       zone: 'us-central1-a',
       cluster: {
-        name: 'test',
+        name: 'npme-test',
         description: 'a test cluster',
         nodePools: [
           {
@@ -101,7 +103,7 @@ describe('Google Provider', function () {
             },
             config: {
               machineType: 'n1-highmem-4',
-              serviceAccount: 'test-k8s-sa',
+              serviceAccount: 'test-project-k8s-sa',
               diskSizeGb: '120',
               imageType: 'COS',
               localSsdCount: 0,
@@ -239,21 +241,33 @@ describe('Google Provider', function () {
         }
       ]
     }
-    initialSetupRoles = {
+    initialAccessRoles = {
       version: 1,
       etag: 'abcdef12345678',
       bindings: [
       ]
     }
-    finalSetupRoles = {
+    initialRolesSet = {
       version: 1,
       etag: 'abcdef12345678',
       bindings: [
         {
           members: [
-            'serviceAccount:test-k8s-sa'
+            'serviceAccount:test-project-k8s-sa'
           ],
-          role: 'roles/storage.legacyBucketReader'
+          role: 'roles/storage.objectViewer'
+        }
+      ]
+    }
+    finalAccessRoles = {
+      version: 2,
+      etag: 'abcdef12345671',
+      bindings: [
+        {
+          members: [
+            'serviceAccount:test-project-k8s-sa'
+          ],
+          role: 'roles/storage.objectViewer'
         }
       ]
     }
@@ -284,9 +298,9 @@ describe('Google Provider', function () {
           .resolves([[]])
         resourceMock.expects('createProject')
           .withArgs(
-            'npme-test',
+            'test-project',
             {
-              name: 'npme-test',
+              name: 'test-project',
               parent: {
                 type: 'organization',
                 id: 'my-org'
@@ -294,9 +308,9 @@ describe('Google Provider', function () {
             }
           )
           .resolves([
-            'project',
+            'test-project',
             {
-              promise: () => Promise.resolve()
+              promise: () => Promise.resolve([{response: {}}])
             },
             'done'
           ])
@@ -308,13 +322,13 @@ describe('Google Provider', function () {
         iamMock.expects('createServiceAccount')
           .withArgs(
             'test-project',
-            'test-k8s-sa',
-            'npme kubernetes service account'
+            'test-project-k8s-sa',
+            'kubernetes cluster service account'
           )
           .resolves(true)
 
         iamMock.expects('createCredentials')
-          .withArgs('test-project', 'test-k8s-sa')
+          .withArgs('test-project', 'test-project-k8s-sa')
           .resolves({
             credentials: 'fake'
           })
@@ -323,7 +337,7 @@ describe('Google Provider', function () {
           .withArgs(
             'test-project',
             'serviceAccount',
-            'test-k8s-sa',
+            'test-project-k8s-sa',
             roles
           ).resolves(finalRoles)
 
@@ -339,6 +353,16 @@ describe('Google Provider', function () {
           })
           .resolves([
             { status: 'DONE' }
+          ])
+
+        clustersMock.expects('getCluster')
+          .withArgs({
+            projectId: 'test-project',
+            zone: 'us-central1-a',
+            clusterId: 'npme-test'
+          })
+          .resolves([
+            { endpoint: '1.1.1.1' }
           ])
 
         iamMock.expects('enableService')
@@ -361,16 +385,17 @@ describe('Google Provider', function () {
           .resolves()
 
         bucketMock.expects('getPolicy')
-          .resolves([initialSetupRoles])
+          .resolves([initialAccessRoles])
 
         bucketMock.expects('setPolicy')
-          .withArgs(finalSetupRoles)
-          .resolves(finalSetupRoles)
+          .withArgs(initialRolesSet)
+          .resolves(finalAccessRoles)
       })
 
       it('should resolve with cluster configuration', function () {
         return provider.create(clusterOptions)
           .should.partiallyEql({
+            masterEndpoint: '1.1.1.1',
             operation: {
               name: 'create',
               zone: 'us-central1-a'
@@ -477,9 +502,9 @@ describe('Google Provider', function () {
           .resolves([[]])
         resourceMock.expects('createProject')
           .withArgs(
-            'npme-test',
+            'test-project',
             {
-              name: 'npme-test',
+              name: 'test-project',
               parent: {
                 type: 'organization',
                 id: 'my-org'
@@ -491,9 +516,9 @@ describe('Google Provider', function () {
 
       it('should fail with error', function () {
         return provider.createProject({
-          name: 'test',
+          name: 'test-project',
           organizationId: 'my-org'
-        }).should.be.rejectedWith('failed to create project test for organization my-org with no more projects for you')
+        }).should.be.rejectedWith('failed to create project test-project for organization my-org with no more projects for you')
       })
 
       after(function () {
@@ -517,9 +542,9 @@ describe('Google Provider', function () {
           .resolves([[]])
         resourceMock.expects('createProject')
           .withArgs(
-            'npme-test',
+            'test-project',
             {
-              name: 'npme-test',
+              name: 'test-project',
               parent: {
                 type: 'organization',
                 id: 'my-org'
@@ -527,7 +552,7 @@ describe('Google Provider', function () {
             }
           )
           .resolves([
-            'project',
+            'test-project',
             {
               promise: () => Promise.reject(new Error('no more projects for you'))
             },
@@ -537,9 +562,9 @@ describe('Google Provider', function () {
 
       it('should fail with error', function () {
         return provider.createProject({
-          name: 'test',
+          name: 'test-project',
           organizationId: 'my-org'
-        }).should.be.rejectedWith('failed to create project test for organization my-org with no more projects for you')
+        }).should.be.rejectedWith('failed to create project test-project for organization my-org with no more projects for you')
       })
 
       after(function () {
@@ -560,12 +585,17 @@ describe('Google Provider', function () {
         clustersMock = sinon.mock(clusters)
         provider = Provider({}, resource, iam, clusters)
         resourceMock.expects('getProjects')
-          .resolves([[{id: 'npme-test'}]])
+          .resolves([[
+            {
+              id: 'test-project',
+              metadata: { projectNumber: 100 }
+            }
+          ]])
         resourceMock.expects('createProject')
           .withArgs(
-            'npme-test',
+            'test-project',
             {
-              name: 'npme-test',
+              name: 'test-project',
               parent: {
                 type: 'organization',
                 id: 'my-org'
@@ -577,10 +607,10 @@ describe('Google Provider', function () {
 
       it('should succeed', function () {
         return provider.createProject({
-          name: 'test',
+          name: 'test-project',
           organizationId: 'my-org'
         }).should.eventually.eql({
-          project: { id: 'npme-test' }
+          response: { projectNumber: 100 }
         })
       })
 
@@ -609,9 +639,9 @@ describe('Google Provider', function () {
           .resolves([[{id: 'other-project'}]])
         resourceMock.expects('createProject')
           .withArgs(
-            'npme-test',
+            'test-project',
             {
-              name: 'npme-test',
+              name: 'test-project',
               parent: {
                 type: 'organization',
                 id: 'my-org'
@@ -619,9 +649,9 @@ describe('Google Provider', function () {
             }
           )
           .resolves([
-            'project',
+            'test-project',
             {
-              promise: () => Promise.resolve()
+              promise: () => Promise.resolve([{response: 'done'}])
             },
             'done'
           ])
@@ -629,10 +659,10 @@ describe('Google Provider', function () {
 
       it('should succeed', function () {
         return provider.createProject({
-          name: 'test',
+          name: 'test-project',
           organizationId: 'my-org'
         }).should.eventually.eql({
-          project: 'project',
+          project: 'test-project',
           response: 'done'
         })
       })
@@ -663,17 +693,17 @@ describe('Google Provider', function () {
         iamMock.expects('createServiceAccount')
           .withArgs(
             'test-project',
-            'test-sa',
-            'npme kubernetes service account'
+            'test-project-sa',
+            'kubernetes cluster service account'
           )
           .rejects(new Error('never ever'))
       })
 
       it('should fail with error', function () {
         return provider.createClusterService({
-          serviceAccount: 'test-sa',
+          serviceAccount: 'test-project-sa',
           projectId: 'test-project'
-        }).should.be.rejectedWith('failed to create cluster service test-sa with never ever')
+        }).should.be.rejectedWith('failed to create cluster service test-project-sa with never ever')
       })
 
       after(function () {
@@ -697,27 +727,27 @@ describe('Google Provider', function () {
         iamMock.expects('createServiceAccount')
           .withArgs(
             'test-project',
-            'test-sa',
-            'npme kubernetes service account'
+            'sa',
+            'kubernetes cluster service account'
           )
           .resolves({
-            email: 'test-project-k8s-sa@test-project.iam.gserviceaccount.com'
+            email: 'sa@test-project.iam.gserviceaccount.com'
           })
         options = {
           projectId: 'test-project',
-          serviceAccount: 'test-sa'
+          serviceAccount: 'sa'
         }
       })
 
       it('should succeed', function () {
         return provider.createClusterService(options)
           .should.eventually.eql({
-            email: 'test-project-k8s-sa@test-project.iam.gserviceaccount.com'
+            email: 'sa@test-project.iam.gserviceaccount.com'
           })
       })
 
       it('should replace serviceAccount with full email', function () {
-        options.serviceAccount.should.eql('test-project-k8s-sa@test-project.iam.gserviceaccount.com')
+        options.serviceAccount.should.eql('sa@test-project.iam.gserviceaccount.com')
       })
 
       after(function () {

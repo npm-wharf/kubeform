@@ -5,4 +5,4 @@ package-lock.json
 spec/
 gs-auth.json
 gs-test-meta.js
-test.js
+cluster-*.json

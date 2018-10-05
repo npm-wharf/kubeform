@@ -16,6 +16,33 @@ const SUPPORTING_SERVICES = [
   'storage-api.googleapis.com'
 ]
 
+function addBinding (roles, newRole, assignment) {
+  let added = false
+  let exists = false
+  let bindings = roles.bindings
+  let i = 0
+  while (i < bindings.length) {
+    const binding = bindings[i]
+    if (binding.role === newRole) {
+      if (binding.members.indexOf(assignment) < 0) {
+        binding.members.push(assignment)
+        added = true
+      } else {
+        exists = true
+      }
+    }
+    i++
+  }
+  if (!added && !exists) {
+    roles.bindings.push({
+      role: newRole,
+      members: [ assignment ]
+    })
+    added = true
+  }
+  return added ? roles : undefined
+}
+
 async function checkCluster (client, options) {
   let pause = 5000
   let done = false
@@ -49,14 +76,21 @@ function create (resource, iam, client, storage, events, config, opts) {
   const options = meta.mergeOptions(config, opts)
   meta.validateOptions(options)
   return createProject(resource, options)
+    .then(async ({response}) => {
+      options.projectNumber = response.projectNumber
+      return response
+    })
     .then(() => enableServices(iam, options, BASELINE_SERVICES))
     .then(() => fixBilling(iam, options))
     .then(() => enableServices(iam, options, SUPPORTING_SERVICES))
     .then(() => createClusterService(iam, options))
-    .then(() => getAccountCredentials(iam, options))
+    .then(async () => {
+      options.credentials = await getAccountCredentials(iam, options)
+      return options.credentials
+    })
     .then(() => setRoles(iam, options))
     .then(() => events.emit('prerequisites-created', {
-      provider: 'gce',
+      provider: 'gke',
       prerequisites: [
         'project-created',
         'service-apis-enabled',
@@ -76,6 +110,10 @@ function create (resource, iam, client, storage, events, config, opts) {
       kubernetesCluster: getClusterConfig(options)
     }))
     .then(() => checkCluster(client, options))
+    .then(async () => {
+      let { endpoint } = await getClusterDetails(client, options)
+      options.masterEndpoint = endpoint
+    })
     .then(() => options)
 }
 
@@ -104,35 +142,35 @@ function createCluster (client, options) {
 }
 
 async function createProject (resource, options) {
-  const name = `npme-${options.name}`
-  log.info(`creating project ${name}`)
-  options.projectId = options.projectId || name
+  options.projectId = options.projectId || options.name
+  const projectId = options.projectId
+  log.info(`creating project ${projectId}`)
   const project = await getProject(resource, options)
   if (project) {
-    log.info(`project ${name} already exists, skipping creation step`)
+    log.info(`project ${projectId} already exists, skipping creation step`)
     return Promise.resolve({
-      project
+      response: project.metadata
     })
   }
   return resource.createProject(
-    name,
+    projectId,
     {
-      name: name,
+      name: projectId,
       parent: {
         type: 'organization',
         id: options.organizationId
       }
     }
   ).then(
-    ([proj, op, resp]) => {
+    ([proj, op]) => {
       return op.promise()
-        .then(() => {
-          return {project: proj, response: resp}
+        .then(resp => {
+          return {project: proj, response: resp[0].response}
         })
     }
   ).catch(
     err => {
-      const msg = `failed to create project ${options.name} for organization ${options.organizationId} with ${err.message}`
+      const msg = `failed to create project ${projectId} for organization ${options.organizationId} with ${err.message}`
       log.error(msg)
       throw new Error(msg)
     }
@@ -144,7 +182,7 @@ function createClusterService (iam, options) {
   return iam.createServiceAccount(
     options.projectId,
     options.serviceAccount,
-    'npme kubernetes service account'
+    'kubernetes cluster service account'
   ).then(
     (body) => {
       if (body.email) {
@@ -184,7 +222,6 @@ function getAccountCredentials (iam, options) {
     options.serviceAccount
   ).then(
     credentials => {
-      options.credentials = credentials
       return credentials
     },
     err => {
@@ -195,7 +232,7 @@ function getAccountCredentials (iam, options) {
   )
 }
 
-function getBucketAccess (bucket, options) {
+function getBucketPolicy (bucket, options) {
   log.info(`getting bucket access for project ${options.projectId}`)
   return bucket.iam.getPolicy()
     .then(
@@ -283,6 +320,22 @@ function getClusterConfig (options) {
   return config
 }
 
+async function getClusterDetails (client, options) {
+  try {
+    const [cluster] = await client.getCluster({
+      projectId: options.projectId,
+      zone: options.zones[0],
+      clusterId: options.name
+    })
+    return cluster
+  } catch (e) {
+    console.log(e)
+    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}`
+    log.error(msg)
+    return { endpoint: undefined }
+  }
+}
+
 function getNodeConfig (options) {
   let worker = options.worker
   let persistent = 0
@@ -351,31 +404,26 @@ function getProject (resource, options) {
     )
 }
 
-function setBucketAccess (bucket, options, roles, account, role) {
+async function setBucketAccess (bucket, options, newRoles, account) {
   log.info(`setting bucket access for project ${options.projectId}`)
-  let bindings = roles.bindings
-  let added = false
-  let i = 0
   const assignment = `serviceAccount:${account}`
-  while (i < bindings.length) {
-    const binding = bindings[i]
-    if (binding.role === role) {
-      if (binding.members.indexOf(assignment) < 0) {
-        binding.members.push(assignment)
-      }
-      added = true
+  for (let i = 0; i < newRoles.length; i++) {
+    const newRole = newRoles[i]
+    const roles = await getBucketPolicy(bucket, options)
+    const change = addBinding(roles, newRole, assignment)
+    if (change) {
+      await setBucketPolicy(bucket, account, newRole, change)
     }
-    i++
   }
-  if (!added) {
-    roles.bindings.push({
-      role: role,
-      members: [ assignment ]
-    })
-  }
+}
+
+function setBucketPolicy (bucket, account, newRole, roles) {
   return bucket.iam.setPolicy(roles)
+    .then(() => {
+      return roles
+    })
     .catch(err => {
-      const msg = `failed to grant ${account} to ${role} with ${err.message}`
+      const msg = `failed to grant ${newRole} to ${account} with ${err.message}`
       log.error(msg)
       throw new Error(msg)
     })
@@ -386,29 +434,26 @@ function grantBucketAccess (storage, options) {
   const readable = options.readableBuckets || []
   const readPromises = readable.map(bucketName => {
     const bucket = storage.bucket(bucketName)
-    return getBucketAccess(bucket, options)
-      .then(
-        roles => setBucketAccess(
-          bucket,
-          options,
-          roles,
-          options.serviceAccount,
-          'roles/storage.legacyBucketReader'
-        )
-      )
+    return setBucketAccess(
+      bucket,
+      options,
+      [
+        'roles/storage.objectViewer'
+      ],
+      options.serviceAccount
+    )
   })
   const writeable = options.writeableBuckets || []
   const writePromises = writeable.map(bucketName => {
     const bucket = storage.bucket(bucketName)
-    return getBucketAccess(bucket)
-      .then(
-        roles => setBucketAccess(
-          bucket,
-          roles,
-          options.serviceAccount,
-          'role/storage.legacyBucketWriter'
-        )
-      )
+    return setBucketAccess(
+      bucket,
+      options,
+      [
+        'role/storage.legacyBucketWriter'
+      ],
+      options.serviceAccount
+    )
   })
 
   return Promise.all(

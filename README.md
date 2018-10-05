@@ -42,6 +42,67 @@ Certain options are set via environment variables vs. the options hash or argume
 | `GOOGLE_ORGANIZATION_ID` | Google Organization Id to create projects under | `''` |
 | `GOOGLE_BILLING_ID` | Google Billing Account Id to associate with project | `''` |
 
+## Events Emitted
+
+After calling `create` the instance will emit events to provide some indication of progress and metadata being fed back from the creation process:
+
+### `prerequisites-created`
+
+**GKE provider**:
+```js
+{
+  provider: 'gke',
+  prerequisites: [
+    'project-created',
+    'service-apis-enabled',
+    'billing-associated',
+    'service-account-created',
+    'account-credentials-acquired',
+    'iam-roles-assigned'
+  ]
+}
+```
+
+### `bucket-permissions-set`
+
+```js
+{
+  readAccess: [ ],
+  writeAccess: [ ]
+}
+```
+
+### `cluster-initialized`
+
+```js
+{
+  kubernetesCluster: {
+    projectId: '',
+    zone: [],
+    cluster: {
+      name: '',
+      description: '',
+      nodePools: [
+        {
+          ...
+        }
+      ],
+      network: ,
+      clusterIpv4Cidr: ,
+      initialClusterVersion: '',
+      locations: [],
+      addonsConfig: {
+        ...
+      },
+      masterAuth: {
+        user: '',
+        password: ''
+      }
+    }
+  }
+}
+```
+
 ## API
 
 ### `create (options)`
@@ -116,6 +177,20 @@ Returns a list of available regions.
 ### getZones(region)
 
 Given a region, list the zones available.
+
+## CLI
+
+### `kubeform provision ./path/to/config -a ./path/to/authFile` -p gke
+
+Will attempt to provision a Kuberenetes cluster using the provider specified. Provider defaults to GKE. Auth file is required.
+
+Additional options:
+
+ * `-o`, `--organization` : the organization id that owns the cluster
+ * `-b`, `--billing` : the billing id that the cluster should be associated with
+ * `-f`, `--file` : the file to write all cluster details to
+
+Both of these options may be provided via the configuration file and are likely to vary between providers.
 
 ## Long-term Goals
 

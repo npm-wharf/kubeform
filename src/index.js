@@ -9,9 +9,6 @@ class API extends EventEmitter {
 
   create (options) {
     return this.provider.create(options)
-      .then(
-        () => options
-      )
   }
 
   getRegions () {

@@ -330,7 +330,7 @@ function getZones (region) {
 
 function mergeOptions (config, options) {
   const merged = Object.assign({}, DEFAULTS, config, options)
-  merged.serviceAccount = `${merged.name}-k8s-sa`
+  merged.serviceAccount = `${merged.projectId || merged.name}-k8s-sa`
   return merged
 }
 
