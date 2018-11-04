@@ -321,9 +321,9 @@ managers = 1
 [travis-url]: https://travis-ci.org/npm-wharf/kubeform
 [coveralls-url]: https://coveralls.io/github/npm-wharf/kubeform?branch=master
 [coveralls-image]: https://coveralls.io/repos/github/npm-wharf/kubeform/badge.svg?branch=master
-[version-image]: https://img.shields.io/npm/v/kubeform.svg?style=flat
-[version-url]: https://www.npmjs.com/package/kubeform
-[downloads-image]: https://img.shields.io/npm/dm/kubeform.svg?style=flat
-[downloads-url]: https://www.npmjs.com/package/kubeform
+[version-image]: https://img.shields.io/npm/v/@npm-wharf/kubeform.svg?style=flat
+[version-url]: https://www.npmjs.com/package/@npm-wharf/kubeform
+[downloads-image]: https://img.shields.io/npm/dm/@npm-wharf/kubeform.svg?style=flat
+[downloads-url]: https://www.npmjs.com/package/@npm-wharf/kubeform
 [dependencies-image]: https://img.shields.io/david/npm-wharf/kubeform.svg?style=flat
 [dependencies-url]: https://david-dm.org/npm-wharf/kubeform
