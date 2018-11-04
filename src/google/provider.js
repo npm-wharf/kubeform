@@ -329,7 +329,6 @@ async function getClusterDetails (client, options) {
     })
     return cluster
   } catch (e) {
-    console.log(e)
     const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}`
     log.error(msg)
     return { endpoint: undefined }

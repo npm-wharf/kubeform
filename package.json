@@ -11,9 +11,13 @@
     "@google-cloud/container": "^0.2.0",
     "@google-cloud/resource": "^0.8.1",
     "@google-cloud/storage": "^1.7.0",
-    "bluebird": "^3.5.1",
+    "bluebird": "^3.5.2",
     "bole": "^3.0.2",
+    "fauxdash": "^1.4.0",
+    "inquirer": "^6.2.0",
     "joi": "^13.4.0",
+    "js-yaml": "^3.12.0",
+    "toml-j0.4": "^1.1.1",
     "yargs": "^12.0.2"
   },
   "devDependencies": {

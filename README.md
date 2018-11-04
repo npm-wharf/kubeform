@@ -170,17 +170,30 @@ kube.create(
 )
 ```
 
-### getRegions()
+### `getRegions ()`
 
 Returns a list of available regions.
 
-### getZones(region)
+### `getZones (region)`
 
 Given a region, list the zones available.
 
+### `init (options)`
+
+The init command was created to help create a valid kubeform cluster specification from a `~/.kubeform` file that provides defaults.
+
+The options hash can have 3 of the following properties:
+
+ * `defaults` - the file to use for defaults, `~/.kubeform`
+ * `data` - a hash or file path to supply overrides/missing values
+
+When called without a `data` property (that must either be a hash containing missing values, or a string pointing to a file that can supply missing values), this function will throw an error that has a `.required` property containing an array of values necessary to create a minimal cluster specification.
+
+If all required data is present, the full specification will be the result of the function.
+
 ## CLI
 
-### `kubeform provision ./path/to/config -a ./path/to/authFile` -p gke
+### `kubeform provision ./path/to/config -a ./path/to/authFile -p gke`
 
 Will attempt to provision a Kuberenetes cluster using the provider specified. Provider defaults to GKE. Auth file is required.
 
@@ -192,12 +205,117 @@ Additional options:
 
 Both of these options may be provided via the configuration file and are likely to vary between providers.
 
+### `kubeform init -f ./data.toml`
+
+Creates a new Kubernetes cluster specification.
+
+ * `-f`, `--data` : the file used to satisfy missing fields from the default
+ * `-d`, `--defaults` : the file to use for supplying default values
+ * `-o`, `--output` : the file to write the cluster specification to
+ * `--verbose` : output verbose logging
+
 ## Long-term Goals
 
  * add an API to price options hash before creation
  * add support for EKS
  * add support for AKS
  * add support for kops?
+
+## Full kubeform Specification in TOML format
+
+The only properties shown here that are **not** required by kubeform are the network properties as these are optional settings.
+
+```toml
+name = "my-cluster"
+description = "this is my cluster"
+projectId = "my-project"
+billingId = "123-456-789"
+organizationId = "1234567890"
+version = "1.9.7-gke.6"
+zones = [ "us-central1-a" ]
+basicAuth = true
+user = "admin"
+password = "thisisapasswordformanagingk8s"
+serviceAccount = "my-k8s-sa"
+readableBuckets = []
+writeableBuclets = []
+
+managers = 1
+[manager]
+  distributed = false
+
+[worker]
+  cores = 2
+  memory = "13GB"
+  count = 3
+  min = 3
+  max = 6
+  maxPerInstance = 4
+  reserved = true
+  maintenanceWindow = "08:00"
+
+[worker.storage]
+  ephemeral = "0GB"
+  persistent = "100GB"
+
+[worker.network]
+  range = "10.0.0.0/32"
+  vpc = "my-vpc"
+
+[flags]
+  alphaFeatures = false
+  authedNetworksOnly = false
+  autoRepair = true
+  autoScale = true
+  autoUpgrade = true
+  basicAuth = true
+  clientCert = true
+  includeDashboard = false
+  legacyAuthorization = false
+  loadBalancedHTTP = true
+  networkPolicy = true
+  privateCluster = false
+  serviceMonitoring = false
+  serviceLogging = false
+```
+
+## Example `~/.kubeform` file
+
+```toml
+basicAuth = true
+user = "admin"
+managers = 1
+
+[manager]
+  distributed = false
+
+[worker]
+  cores = 2
+  memory = "13GB"
+  maxPerInstance = 4
+  reserved = true
+  maintenanceWindow = "08:00"
+
+[worker.storage]
+  ephemeral = "0GB"
+  persistent = "160GB"
+
+[flags]
+  alphaFeatures = false
+  authedNetworksOnly = false
+  autoRepair = true
+  autoScale = true
+  autoUpgrade = true
+  basicAuth = true
+  clientCert = true
+  includeDashboard = false
+  legacyAuthorization = false
+  loadBalancedHTTP = true
+  networkPolicy = true
+  privateCluster = false
+  serviceMonitoring = false
+  serviceLogging = false
+```
 
 [travis-image]: https://travis-ci.org/npm-wharf/kubeform.svg?branch=master
 [travis-url]: https://travis-ci.org/npm-wharf/kubeform
