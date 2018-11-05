@@ -58,7 +58,7 @@ async function handle (Kubeform, debugOut, args) {
     stream: debugOut
   })
 
-  const kube = Kubeform({
+  const kube = new Kubeform({
     authFile: args.auth,
     billingAccount: args.billing,
     organizationId: args.organization,
