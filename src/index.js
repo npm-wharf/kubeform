@@ -126,7 +126,6 @@ const REQUIRED_FIELDS = [
 ]
 
 const FIELD_TYPES = {
-  zones: 'array',
   distributed: 'boolean',
   cores: 'number',
   count: 'number',
