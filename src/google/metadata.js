@@ -335,7 +335,7 @@ function mergeOptions (config, options) {
 }
 
 function validateOptions (options) {
-  const result = VALIDATION.validate(options)
+  const result = VALIDATION.validate(options, { allowUnknown: true })
   if (result.error) {
     throw result.error
   }
