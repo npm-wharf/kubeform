@@ -33,11 +33,11 @@ gcloud organizations add-iam-policy-binding [organization id] --member serviceAc
 
 ## Environment
 
-Certain options are set via environment variables vs. the options hash or arguments:
+Certain options can be set via environment variables:
 
 | Variable | Description | Default |
 |:-:|---|---|
-| `KUBE_SERVICE` | The backing service to use for the request | `'GKE'` |
+| `KUBERNETES_PROVIDER` | The backing service to use for the request | `'GKE'` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google API credentials file | `''` |
 | `GOOGLE_ORGANIZATION_ID` | Google Organization Id to create projects under | `''` |
 | `GOOGLE_BILLING_ID` | Google Billing Account Id to associate with project | `''` |
@@ -105,6 +105,25 @@ After calling `create` the instance will emit events to provide some indication 
 
 ## API
 
+### `constructor (config)`
+
+The constructor takes an optional set of properties in the hash to provide required settings directly instead of requiring environment variables:
+
+ * `authFile`: the location of the file containing credentials to use for authentication
+ * `billingAccount`: the id of the billing account to associate with the project & cluster
+ * `organizationId`: the organization identity
+ * `provider`: the name of the Kubernetes provider currently `gke` or `none`
+
+```js
+const Kubeform = require('@npm-wharf/kubeform')
+const kube = new Kubeform({
+  authFile: '/path/to/auth.json',
+  billingAccount: '11223344',
+  organizationId: '123-4567-890',
+  provider: 'gke'
+})
+```
+
 ### `create (options)`
 
 Send a creation request to the underlying Kubernetes service with desired options. Returns a promise that resolves when the cluster is created or rejects if an error occurs during the initial API call or during creation.
@@ -140,6 +159,7 @@ kube.create(
       max: 6, // if autoscaling is on, a minimum and max are required
       maxPerInstance: 4, // matches 3 x the # of workers by default, instances (or pools) are how most providers span a cluster across AZs
       reserved: true, // whether the service should assign nodes that can provide availability guarantees or not (and cost less)
+      maintenanceWindow: '08:00', // time in UTC for when automated maint should begin
       storage: {
         ephemeral: '0GB', // unreliable but usually cheaper/free storage :grimacing:
         persistent: '100GB', // how much reliable storage to attach to the instance - usually costs extra
@@ -159,8 +179,7 @@ kube.create(
       clientCert: true, // generate a client cert automatically
       includeDashboard: false, // include a default installation of the kubernetes dashboard
       legacyAuthorization: false, // must be false for full RBAC
-      loadBalanceHTTP: true, // required for use with Google's Cloud LB
-      maintenanceWindow: '08:00:00Z', // time in UTC for when automated maint should begin
+      loadBalancedHTTP: true, // required for use with Google's Cloud LB
       networkPolicy: true, // turn on network policies (calico)
       privateCluster: false, // nodes do not receive public IPs and the master is inaccessible by default
       serviceMonitoring: false, // should the service perform additonal monitoring

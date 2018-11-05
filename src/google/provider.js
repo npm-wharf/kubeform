@@ -503,6 +503,8 @@ module.exports = function (config, resource, iam, client, storage, events) {
     getAccountCredentials: getAccountCredentials.bind(null, iam),
     getClusterConfig,
     getNodeConfig,
+    getRegions: meta.getRegions,
+    getZones: meta.getZones,
     grantBucketAccess: grantBucketAccess.bind(null, storage),
     setRoles: setRoles.bind(null, iam)
   }

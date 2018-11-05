@@ -1,3 +1,8 @@
-module.exports = {
-  provider: process.env.KUBE_SERVICE || 'gke'
+module.exports = function (options) {
+  return {
+    authFile: options.authFile || process.env.GOOGLE_APPLICATIONS_CREDENTIALS,
+    billingAccount: options.billingAccount || process.env.GOOGLE_BILLING_ID,
+    organizationId: options.organizationId || process.env.GOOGLE_ORGANIZATION_ID,
+    provider: options.provider || process.env.KUBERNETES_PROVIDER || 'gke'
+  }
 }

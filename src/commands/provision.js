@@ -39,7 +39,7 @@ function build () {
   }
 }
 
-async function handle (debugOut, args) {
+async function handle (Kubeform, debugOut, args) {
   if (args.provider) {
     process.env.KUBE_SERVICE = args.provider
   }
@@ -58,13 +58,18 @@ async function handle (debugOut, args) {
     stream: debugOut
   })
 
-  const Kubeform = require('../index')
+  const kube = Kubeform({
+    authFile: args.auth,
+    billingAccount: args.billing,
+    organizationId: args.organization,
+    provider: args.provider
+  })
   const fullPath = path.resolve(args.configPath)
   if (fs.existsSync(fullPath)) {
     try {
       const json = fs.readFileSync(fullPath, { encoding: 'utf8' })
       const config = JSON.parse(json)
-      const cluster = await Kubeform.create(config)
+      const cluster = await kube.create(config)
       const outputPath = path.resolve(args.file)
       fs.writeFileSync(
         outputPath,
@@ -80,11 +85,11 @@ async function handle (debugOut, args) {
   }
 }
 
-module.exports = function (debugOut) {
+module.exports = function (Kubeform, debugOut) {
   return {
     command: 'provision <configPath> [options]',
     desc: 'provision a Kubernetes cluster',
     builder: build(),
-    handler: handle.bind(null, debugOut)
+    handler: handle.bind(null, Kubeform, debugOut)
   }
 }

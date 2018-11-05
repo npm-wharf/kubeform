@@ -20,6 +20,11 @@ function build () {
       description: 'the file to use for supplying default values',
       default: path.join(process.env.HOME, '/.kubeform')
     },
+    provider: {
+      alias: 'p',
+      description: 'specify which cloud provider to use to select data centers from',
+      default: 'gke'
+    },
     verbose: {
       describe: 'output verbose logging',
       default: false,
@@ -28,14 +33,16 @@ function build () {
   }
 }
 
-async function handle (debugOut, args) {
+async function handle (Kubeform, debugOut, args) {
   bole.output({
     level: args.verbose ? 'debug' : 'info',
     stream: debugOut
   })
-  const original = process.env.KUBE_SERVICE
-  process.env.KUBE_SERVICE = 'none'
-  const Kubeform = require('../index')
+
+  const kube = new Kubeform({
+    provider: 'none'
+  })
+
   const dataPath = args.data ? path.resolve(args.data) : null
   const defaultPath = args.defaults ? path.resolve(args.defaults) : null
   let full = {}
@@ -46,19 +53,18 @@ async function handle (debugOut, args) {
   if (dataPath && fs.existsSync(dataPath)) {
     options.data = dataPath
   }
-  process.env.KUBE_SERVICE = original
   try {
     log.info(`asking for a specification`)
-    full = await Kubeform.init(options)
+    full = await kube.init(options)
   } catch (e) {
     if (!e.required) {
       log.error(`could not generate cluster specification due to ${e.stack}`)
       process.exit(100)
     } else {
-      const tokens = await inquire.acquireTokens(e.required)
+      const tokens = await inquire.acquireTokens(args.provider, e.required)
       options.tokens = tokens
       try {
-        full = await Kubeform.init(options)
+        full = await kube.init(options)
       } catch (e) {
         log.error(`could not generate cluster specification due to ${e.stack}`)
       }
@@ -73,11 +79,11 @@ async function handle (debugOut, args) {
   log.info(`new cluster specification written to '${outputPath}'`)
 }
 
-module.exports = function (debugOut) {
+module.exports = function (Kubeform, debugOut) {
   return {
     command: 'init [options]',
     desc: 'create a new kubeform cluster specification',
     builder: build(),
-    handler: handle.bind(null, debugOut)
+    handler: handle.bind(null, Kubeform, debugOut)
   }
 }

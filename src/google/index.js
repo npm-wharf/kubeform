@@ -5,24 +5,20 @@ const Iam = require('./iam')
 const Provider = require('./provider')
 
 module.exports = function (config, events) {
-  const orgId = process.env.GOOGLE_ORGANIZATION_ID
-  const authFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
-  config.organizationId = orgId
-  config.billingAccount = process.env.GOOGLE_BILLING_ID
   const resource = Resource({
-    projectId: orgId,
-    keyFileName: authFile
+    projectId: config.organizationId,
+    keyFileName: config.authFile
   })
   const iam = Iam({
-    projectId: orgId,
-    keyFileName: authFile
+    projectId: config.organizationId,
+    keyFileName: config.authFile
   })
   const storage = Storage({
-    projectId: orgId,
-    keyFileName: authFile
+    projectId: config.organizationId,
+    keyFileName: config.authFile
   })
   const client = new container.v1.ClusterManagerClient({
-    keyFileName: authFile
+    keyFileName: config.authFile
   })
   return Provider(config, resource, iam, client, storage, events)
 }

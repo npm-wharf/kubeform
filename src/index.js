@@ -1,14 +1,14 @@
 const _ = require('fauxdash')
-const config = require('./config')
 const EventEmitter = require('events')
 const path = require('path')
 const fs = require('fs')
 const inquire = require('./commands/inquire')
 
 class API extends EventEmitter {
-  constructor () {
+  constructor (options) {
     super()
-    this.provider = require('./provider')(config, this)
+    this.config = require('./config')(options)
+    this.provider = require('./provider')(this.config, this)
   }
 
   create (options) {
@@ -82,8 +82,7 @@ class API extends EventEmitter {
   }
 }
 
-const api = new API()
-module.exports = api
+module.exports = API
 
 function changeType (obj, key) {
   const type = FIELD_TYPES[ key ]
