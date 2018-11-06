@@ -48,7 +48,9 @@ class API extends EventEmitter {
         data = options.data
       }
     }
-
+    console.log('defaults', defaults)
+    console.log('data', data)
+    console.log('tokens', options.tokens)
     let mixed = _.merge(defaults, data, options.tokens || {})
     const missing = REQUIRED_FIELDS.reduce((missing, required) => {
       let obj = mixed
@@ -77,6 +79,7 @@ class API extends EventEmitter {
       err.required = missing
       throw err
     } else {
+      console.log(mixed)
       return mixed
     }
   }
@@ -99,7 +102,7 @@ function changeType (obj, key) {
         }
         break
       case 'boolean':
-        obj[ key ] = obj[ key ] === 'true'
+        obj[ key ] = obj[ key ] === 'true' || obj[ key ] === true
         break
       case 'number':
         obj[ key ] = Number.parseInt(obj[ key ])
