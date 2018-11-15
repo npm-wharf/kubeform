@@ -1,22 +1,22 @@
-const _ = require('fauxdash')
 const fs = require('fs')
 const path = require('path')
-const Promise = require('bluebird')
 const inquirer = require('inquirer')
 const toml = require('toml-j0.4')
+const uuid = require('uuid')
 const yaml = require('js-yaml')
 
 const SECRET_RGX = /(pass$|password|passwd|secret|secrt|scrt|secure)/i
 
 const prompt = inquirer.createPromptModule()
 
-function acquireTokens (provider, tokens) {
-  return Promise.mapSeries(tokens, (token) => {
+function acquireTokens (provider, tokens, defaults = {}) {
+  const prompts = tokens.reduce((acc, token) => {
     const list = GEO_LIST[provider]
     const settings = {
       type: 'input',
       name: token,
       message: `'${token}'`,
+      default: readDefault(defaults, token),
       validate: (x) => {
         if (x === '' || x === undefined || x === null) {
           return 'Please provide a value for the token.'
@@ -46,11 +46,16 @@ function acquireTokens (provider, tokens) {
       }
     } else if (SECRET_RGX.test(token)) {
       settings.type = 'password'
+      settings.default = uuid.v4()
+    } else if (token === 'serviceAccount') {
+      settings.default = (data) => {
+        return `${data.projectId}-k8s-sa`
+      }
     }
-    return prompt(settings)
-  }).then(list => {
-    return _.merge.apply(null, list)
-  })
+    acc.push(settings)
+    return acc
+  }, [])
+  return prompt(prompts)
 }
 
 function loadTokens (file) {
@@ -75,6 +80,18 @@ function loadTokens (file) {
   } else {
     console.log(`The token file '${tokenFile}' does not exist or could not be read. Proceeding without it.`)
   }
+}
+
+function readDefault (defaults, token) {
+  let levels = token.split('.')
+  let obj = defaults
+  while (levels.length >= 2) {
+    let level = levels.shift()
+    if (obj && obj[level]) {
+      obj = obj[level]
+    }
+  }
+  return obj ? obj[levels.shift()] : null
 }
 
 module.exports = {

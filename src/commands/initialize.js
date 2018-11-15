@@ -47,8 +47,9 @@ async function handle (Kubeform, debugOut, args) {
   const defaultPath = args.defaults ? path.resolve(args.defaults) : null
   let full = {}
   let options = {}
+  let defaults = {}
   if (defaultPath && fs.existsSync(defaultPath)) {
-    options.defaults = defaultPath
+    defaults = inquire.loadTokens(defaultPath)
   }
   if (dataPath && fs.existsSync(dataPath)) {
     options.data = dataPath
@@ -61,7 +62,7 @@ async function handle (Kubeform, debugOut, args) {
       log.error(`could not generate cluster specification due to ${e.stack}`)
       process.exit(100)
     } else {
-      const tokens = await inquire.acquireTokens(args.provider, e.required)
+      const tokens = await inquire.acquireTokens(args.provider, e.required, defaults)
       options.tokens = tokens
       try {
         full = await kube.init(options)
