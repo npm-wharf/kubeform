@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.2.5"></a>
+## [1.2.5](https://github.com/npm-wharf/kubeform/compare/v1.2.4...v1.2.5) (2018-11-15)
+
+
+### Bug Fixes
+
+* improve the prompt approach used in init ([8c21ea7](https://github.com/npm-wharf/kubeform/commit/8c21ea7))
+
+
+
 <a name="1.2.4"></a>
 ## [1.2.4](https://github.com/npm-wharf/kubeform/compare/v1.2.3...v1.2.4) (2018-11-06)
 
