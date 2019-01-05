@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.3.0"></a>
+# [1.3.0](https://github.com/npm-wharf/kubeform/compare/v1.2.5...v1.3.0) (2019-01-05)
+
+
+### Features
+
+* protect against attempts to recreate clusters, fetch version list during CLI initialization, allow re-use of service account credentials ([d641482](https://github.com/npm-wharf/kubeform/commit/d641482))
+
+
+
 <a name="1.2.5"></a>
 ## [1.2.5](https://github.com/npm-wharf/kubeform/compare/v1.2.4...v1.2.5) (2018-11-15)
 
