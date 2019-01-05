@@ -1,5 +1,5 @@
 require('./setup')
-const IAM = require('../src/google/iam')
+const Cloud = require('../src/google/api')
 
 const OAUTH_URL = 'https://www.googleapis.com/oauth2/v4/token'
 const REVOKE_URL = 'https://accounts.google.com/o/oauth2/revoke?token='
@@ -15,7 +15,7 @@ function setRevokeResponse (scope) {
     .reply(200, {})
 }
 
-describe('Google IAM', function () {
+describe('Google Cloud APIs', function () {
   let authScope
   let revokeScope
 
@@ -27,7 +27,7 @@ describe('Google IAM', function () {
 
   describe('when creating a service account', function () {
     let scope
-    let iam
+    let cloud
     before(function () {
       scope = nock('https://iam.googleapis.com/v1')
         .matchHeader('authorization', (val) => {
@@ -38,7 +38,7 @@ describe('Google IAM', function () {
           // header
           return /^Bearer[ ]ya29[.]/.test(val)
         })
-      iam = new IAM({
+      cloud = new Cloud({
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
@@ -55,7 +55,7 @@ describe('Google IAM', function () {
       })
 
       it('should reject with error', function () {
-        return iam.createServiceAccount('test-project', 'sa', 'service account')
+        return cloud.createServiceAccount('test-project', 'sa', 'service account')
           .should.be.rejectedWith('no')
       })
     })
@@ -73,7 +73,7 @@ describe('Google IAM', function () {
       })
 
       it('should succeed with reply', function () {
-        return iam.createServiceAccount('test-project', 'sa', 'service account')
+        return cloud.createServiceAccount('test-project', 'sa', 'service account')
           .should.eventually.eql({
             ok: true
           })
@@ -87,7 +87,7 @@ describe('Google IAM', function () {
       })
 
       it('should succeed with reply', function () {
-        return iam.createServiceAccount('test-project', 'sa', 'service account')
+        return cloud.createServiceAccount('test-project', 'sa', 'service account')
           .should.eventually.eql({
             ok: true
           })
@@ -101,7 +101,7 @@ describe('Google IAM', function () {
 
   describe('when creating key file', function () {
     let scope
-    let iam
+    let cloud
     before(function () {
       setAuthResponse(authScope)
       setRevokeResponse(revokeScope)
@@ -114,7 +114,7 @@ describe('Google IAM', function () {
           // header
           return /^Bearer[ ]ya29[.]/.test(val)
         })
-      iam = new IAM({
+      cloud = new Cloud({
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
@@ -129,7 +129,7 @@ describe('Google IAM', function () {
       })
 
       it('should reject with error', function () {
-        return iam.createCredentials('test-project', 'svc-acct')
+        return cloud.createCredentials('test-project', 'svc-acct')
           .should.be.rejectedWith('never')
       })
     })
@@ -149,7 +149,7 @@ describe('Google IAM', function () {
       })
 
       it('should resolve with json from privateKeyData', function () {
-        return iam.createCredentials('test-project', 'svc-acct')
+        return cloud.createCredentials('test-project', 'svc-acct')
           .should.eventually.eql({
             file: 'secrets',
             sneakcrets: 'erhmagershyall'
@@ -160,7 +160,7 @@ describe('Google IAM', function () {
 
   describe('when getting roles', function () {
     let scope
-    let iam
+    let cloud
     before(function () {
       setAuthResponse(authScope)
       setRevokeResponse(revokeScope)
@@ -173,7 +173,7 @@ describe('Google IAM', function () {
           // header
           return /^Bearer[ ]ya29[.]/.test(val)
         })
-      iam = new IAM({
+      cloud = new Cloud({
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
@@ -188,7 +188,7 @@ describe('Google IAM', function () {
       })
 
       it('it should reject with error', function () {
-        return iam.getRoles('test-project')
+        return cloud.getRoles('test-project')
           .should.be.rejectedWith('unauthorized')
       })
     })
@@ -214,7 +214,7 @@ describe('Google IAM', function () {
       })
 
       it('it should resolve with role structure', function () {
-        return iam.getRoles('test-project')
+        return cloud.getRoles('test-project')
           .should.eventually.eql({
             version: 1,
             etag: 'bleepblorp',
@@ -252,7 +252,7 @@ describe('Google IAM', function () {
           // header
           return /^Bearer[ ]ya29[.]/.test(val)
         })
-      iam = new IAM({
+      iam = new Cloud({
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
@@ -448,7 +448,7 @@ describe('Google IAM', function () {
 
   describe('when assigning billing to project', function () {
     let scope
-    let iam
+    let cloud
     before(function () {
       setAuthResponse(authScope)
       setRevokeResponse(revokeScope)
@@ -461,7 +461,7 @@ describe('Google IAM', function () {
           // header
           return /^Bearer[ ]ya29[.]/.test(val)
         })
-      iam = new IAM({
+      cloud = new Cloud({
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
@@ -481,7 +481,7 @@ describe('Google IAM', function () {
       })
 
       it('it should reject with error', function () {
-        return iam.assignBilling('test-project', 'this-is-a-fake-billing-id')
+        return cloud.assignBilling('test-project', 'this-is-a-fake-billing-id')
           .should.be.rejectedWith('unauthorized')
       })
     })
@@ -500,7 +500,7 @@ describe('Google IAM', function () {
       })
 
       it('it should reject with error', function () {
-        return iam.assignBilling('test-project', 'this-is-a-fake-billing-id')
+        return cloud.assignBilling('test-project', 'this-is-a-fake-billing-id')
           .should.eventually.eql({ok: 'yep'})
       })
     })
@@ -511,7 +511,7 @@ describe('Google IAM', function () {
   })
 
   describe('when enabling services', function () {
-    let iam
+    let cloud
     let scope
     before(function () {
       setAuthResponse(authScope)
@@ -525,7 +525,7 @@ describe('Google IAM', function () {
           // header
           return /^Bearer[ ]ya29[.]/.test(val)
         })
-      iam = new IAM({
+      cloud = new Cloud({
         projectId: 'test-org',
         keyFile: './spec/keys/test-key.json'
       })
@@ -542,7 +542,7 @@ describe('Google IAM', function () {
       })
 
       it('it should reject with error', function () {
-        return iam.enableService('test-project', 'imaginary.googleapis.com')
+        return cloud.enableService('test-project', 'imaginary.googleapis.com')
           .should.be.rejectedWith('unauthorized')
       })
     })
@@ -564,7 +564,7 @@ describe('Google IAM', function () {
       })
 
       it('it should reject with error', function () {
-        return iam.enableService('test-project', 'imaginary.googleapis.com')
+        return cloud.enableService('test-project', 'imaginary.googleapis.com')
           .should.eventually.eql(true)
       })
     })

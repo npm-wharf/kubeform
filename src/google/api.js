@@ -1,12 +1,11 @@
-
 const common = require('@google-cloud/common')
 const util = require('util')
-const log = require('bole')('kubeform.google-iam')
+const log = require('bole')('kubeform.google-cloud')
 
-function Iam (options) {
-  if (!(this instanceof Iam)) {
+function CloudAPI (options) {
+  if (!(this instanceof CloudAPI)) {
     options = common.util.normalizeArguments(this, options)
-    return new Iam(options)
+    return new CloudAPI(options)
   }
 
   const config = {
@@ -23,7 +22,7 @@ function Iam (options) {
   common.Service.call(this, config, options)
 }
 
-Iam.prototype.assignBilling = async function assignBilling (projectId, billingAccount) {
+CloudAPI.prototype.assignBilling = async function assignBilling (projectId, billingAccount) {
   const body = {
     'billingAccountName': `billingAccounts/${billingAccount}`
   }
@@ -39,7 +38,7 @@ Iam.prototype.assignBilling = async function assignBilling (projectId, billingAc
   })
 }
 
-Iam.prototype.assignRoles = async function assignRoles (projectId, accountType, accountName, roles) {
+CloudAPI.prototype.assignRoles = async function assignRoles (projectId, accountType, accountName, roles) {
   let assigned = await this.getRoles(projectId)
   let error
   while (roles.length > 0) {
@@ -57,7 +56,7 @@ Iam.prototype.assignRoles = async function assignRoles (projectId, accountType, 
   return assigned
 }
 
-Iam.prototype.assignRole = function assignRole (projectId, existing, role, accountType, accountName) {
+CloudAPI.prototype.assignRole = function assignRole (projectId, existing, role, accountType, accountName) {
   let bindings = existing.bindings
   let i = 0
   let added
@@ -103,7 +102,7 @@ Iam.prototype.assignRole = function assignRole (projectId, existing, role, accou
   )
 }
 
-Iam.prototype.checkBilling = function checkBilling (projectId, billingAccount) {
+CloudAPI.prototype.checkBilling = function checkBilling (projectId, billingAccount) {
   return this.asyncReq({
     method: 'GET',
     uri: `https://cloudbilling.googleapis.com/v1/projects/${projectId}/billingInfo`,
@@ -123,7 +122,7 @@ Iam.prototype.checkBilling = function checkBilling (projectId, billingAccount) {
   )
 }
 
-Iam.prototype.checkRole = async function checkRole (projectId, existing) {
+CloudAPI.prototype.checkRole = async function checkRole (projectId, existing) {
   let pause = 500
   let next
   do {
@@ -137,7 +136,7 @@ Iam.prototype.checkRole = async function checkRole (projectId, existing) {
   return next
 }
 
-Iam.prototype.checkService = function checkService (operation) {
+CloudAPI.prototype.checkService = function checkService (operation) {
   return this.asyncReq({
     method: 'GET',
     uri: `https://servicemanagement.googleapis.com/v1/${operation}?alt=json`,
@@ -153,7 +152,7 @@ Iam.prototype.checkService = function checkService (operation) {
   )
 }
 
-Iam.prototype.createCredentials = function createCredentials (projectId, accountName) {
+CloudAPI.prototype.createCredentials = function createCredentials (projectId, accountName) {
   const body = { 'privateKeyType': 'TYPE_GOOGLE_CREDENTIALS_FILE' }
   return this.asyncReq({
     method: 'POST',
@@ -168,7 +167,7 @@ Iam.prototype.createCredentials = function createCredentials (projectId, account
   )
 }
 
-Iam.prototype.createServiceAccount = async function createServiceAccount (projectId, accountName, displayName) {
+CloudAPI.prototype.createServiceAccount = async function createServiceAccount (projectId, accountName, displayName) {
   let body = {
     accountId: accountName,
     serviceAccount: {
@@ -187,7 +186,7 @@ Iam.prototype.createServiceAccount = async function createServiceAccount (projec
   })
 }
 
-Iam.prototype.enableService = function enableService (projectId, serviceName) {
+CloudAPI.prototype.enableService = function enableService (projectId, serviceName) {
   const body = { consumerId: `project:${projectId}` }
   log.debug(`enabling ${serviceName} on ${projectId}`)
   return this.asyncReq({
@@ -202,7 +201,7 @@ Iam.prototype.enableService = function enableService (projectId, serviceName) {
   )
 }
 
-Iam.prototype.getRoles = function getRoles (projectId) {
+CloudAPI.prototype.getRoles = function getRoles (projectId) {
   return this.asyncReq({
     method: 'POST',
     uri: `https://cloudresourcemanager.googleapis.com/v1/projects/${projectId}:getIamPolicy`,
@@ -211,7 +210,16 @@ Iam.prototype.getRoles = function getRoles (projectId) {
   })
 }
 
-Iam.prototype.getServiceAccount = function getServiceAccount (projectId, accountName) {
+CloudAPI.prototype.getAPIVersions = function getAPIVersions (projectId, zoneId) {
+  console.log(`get versions for ${projectId} and ${zoneId}`)
+  return this.asyncReq({
+    method: 'GET',
+    uri: `https://container.googleapis.com/v1/projects/${projectId}/locations/${zoneId}/serverConfig`,
+    qs: { alt: 'json' }
+  })
+}
+
+CloudAPI.prototype.getServiceAccount = function getServiceAccount (projectId, accountName) {
   return this.asyncReq({
     method: 'GET',
     uri: `/projects/${projectId}/serviceAccounts/${accountName}@${projectId}.iam.gserviceaccount.com`
@@ -226,7 +234,7 @@ Iam.prototype.getServiceAccount = function getServiceAccount (projectId, account
   )
 }
 
-Iam.prototype.waitForService = async function waitForService (operation) {
+CloudAPI.prototype.waitForService = async function waitForService (operation) {
   let pause = 500
   let ready = false
   do {
@@ -247,6 +255,6 @@ function wait (ms) {
   })
 }
 
-util.inherits(Iam, common.Service)
+util.inherits(CloudAPI, common.Service)
 
-module.exports = Iam
+module.exports = CloudAPI

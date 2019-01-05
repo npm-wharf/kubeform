@@ -20,6 +20,11 @@ function build () {
       description: 'the file to use for supplying default values',
       default: path.join(process.env.HOME, '/.kubeform')
     },
+    auth: {
+      alias: 'a',
+      description: 'the auth file containing credentials for use with the provider',
+      required: true
+    },
     provider: {
       alias: 'p',
       description: 'specify which cloud provider to use to select data centers from',
@@ -38,9 +43,15 @@ async function handle (Kubeform, debugOut, args) {
     level: args.verbose ? 'debug' : 'info',
     stream: debugOut
   })
-
+  if (args.provider) {
+    process.env.KUBE_SERVICE = args.provider
+  }
+  if (args.auth) {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = args.auth
+  }
   const kube = new Kubeform({
-    provider: 'none'
+    authFile: args.auth,
+    provider: args.provider
   })
 
   const dataPath = args.data ? path.resolve(args.data) : null
@@ -62,7 +73,7 @@ async function handle (Kubeform, debugOut, args) {
       log.error(`could not generate cluster specification due to ${e.stack}`)
       process.exit(100)
     } else {
-      const tokens = await inquire.acquireTokens(args.provider, e.required, defaults)
+      const tokens = await inquire.acquireTokens(kube, args.provider, e.required, defaults)
       options.tokens = tokens
       try {
         full = await kube.init(options)

@@ -1,7 +1,7 @@
 const Resource = require('@google-cloud/resource')
 const container = require('@google-cloud/container')
 const Storage = require('@google-cloud/storage')
-const Iam = require('./iam')
+const Cloud = require('./api')
 const Provider = require('./provider')
 
 module.exports = function (config, events) {
@@ -9,7 +9,7 @@ module.exports = function (config, events) {
     projectId: config.organizationId,
     keyFileName: config.authFile
   })
-  const iam = Iam({
+  const cloud = Cloud({
     projectId: config.organizationId,
     keyFileName: config.authFile
   })
@@ -20,5 +20,5 @@ module.exports = function (config, events) {
   const client = new container.v1.ClusterManagerClient({
     keyFileName: config.authFile
   })
-  return Provider(config, resource, iam, client, storage, events)
+  return Provider(config, resource, cloud, client, storage, events)
 }

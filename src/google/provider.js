@@ -44,6 +44,11 @@ function addBinding (roles, newRole, assignment) {
 }
 
 async function checkCluster (client, options) {
+  // if no operation exists, it is because the cluster already existed
+  // and the create step was skipped
+  if (!options.operation) {
+    return
+  }
   let pause = 5000
   let done = false
   const request = {
@@ -72,7 +77,25 @@ async function checkCluster (client, options) {
   } while (!done)
 }
 
-function create (resource, iam, client, storage, events, config, opts) {
+async function describeCluster (client, options) {
+  const request = {
+    projectId: options.projectId,
+    zone: options.zones[ 0 ],
+    clusterId: options.name
+  }
+  try {
+    log.info(`checking for existing cluster '${options.name}'`)
+    const [ cluster ] = await client.getCluster(request)
+    log.info(`cluster status is ${cluster.status}`)
+    return cluster
+  } catch (e) {
+    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}`
+    log.error(msg)
+    return false
+  }
+}
+
+function create (resource, cloud, client, storage, events, config, opts) {
   const options = meta.mergeOptions(config, opts)
   meta.validateOptions(options)
   return createProject(resource, options)
@@ -80,15 +103,19 @@ function create (resource, iam, client, storage, events, config, opts) {
       options.projectNumber = response.projectNumber
       return response
     })
-    .then(() => enableServices(iam, options, BASELINE_SERVICES))
-    .then(() => fixBilling(iam, options))
-    .then(() => enableServices(iam, options, SUPPORTING_SERVICES))
-    .then(() => createClusterService(iam, options))
+    .then(() => enableServices(cloud, options, BASELINE_SERVICES))
+    .then(() => fixBilling(cloud, options))
+    .then(() => enableServices(cloud, options, SUPPORTING_SERVICES))
+    .then(() => createClusterService(cloud, options))
     .then(async () => {
-      options.credentials = await getAccountCredentials(iam, options)
+      if (!options.credentials) {
+        options.credentials = await getAccountCredentials(cloud, options)
+      } else {
+        log.info(`using provided service account credentials`)
+      }
       return options.credentials
     })
-    .then(() => setRoles(iam, options))
+    .then(() => setRoles(cloud, options))
     .then(() => events.emit('prerequisites-created', {
       provider: 'gke',
       prerequisites: [
@@ -97,7 +124,7 @@ function create (resource, iam, client, storage, events, config, opts) {
         'billing-associated',
         'service-account-created',
         'account-credentials-acquired',
-        'iam-roles-assigned'
+        'cloud-roles-assigned'
       ]
     }))
     .then(() => grantBucketAccess(storage, options))
@@ -117,7 +144,11 @@ function create (resource, iam, client, storage, events, config, opts) {
     .then(() => options)
 }
 
-function createCluster (client, options) {
+async function createCluster (client, options) {
+  const existing = await describeCluster(client, options)
+  if (existing) {
+    return Promise.resolve(options)
+  }
   const seconds = 60
   log.info(`creating Kubernetes cluster for project ${options.projectId}`)
   const config = getClusterConfig(options)
@@ -177,9 +208,9 @@ async function createProject (resource, options) {
   )
 }
 
-function createClusterService (iam, options) {
+function createClusterService (cloud, options) {
   log.info(`creating service account for project ${options.projectId}`)
-  return iam.createServiceAccount(
+  return cloud.createServiceAccount(
     options.projectId,
     options.serviceAccount,
     'kubernetes cluster service account'
@@ -198,14 +229,14 @@ function createClusterService (iam, options) {
   )
 }
 
-function enableServices (iam, options, services) {
+function enableServices (cloud, options, services) {
   log.info(`enabling services ${services.join(', ')} for project ${options.projectId}`)
-  return Promise.mapSeries(services, service => iam.enableService(options.projectId, service))
+  return Promise.mapSeries(services, service => cloud.enableService(options.projectId, service))
 }
 
-function fixBilling (iam, options) {
+function fixBilling (cloud, options) {
   log.info(`associating billing account with project ${options.projectId}`)
-  return iam.assignBilling(options.projectId, options.billingAccount)
+  return cloud.assignBilling(options.projectId, options.billingAccount)
     .catch(
       err => {
         const msg = `failed to associate billing with account ${options.serviceAccount} with ${err.message}`
@@ -215,9 +246,9 @@ function fixBilling (iam, options) {
     )
 }
 
-function getAccountCredentials (iam, options) {
+function getAccountCredentials (cloud, options) {
   log.info(`acquiring service account credentials for project ${options.projectId}`)
-  return iam.createCredentials(
+  return cloud.createCredentials(
     options.projectId,
     options.serviceAccount
   ).then(
@@ -321,18 +352,8 @@ function getClusterConfig (options) {
 }
 
 async function getClusterDetails (client, options) {
-  try {
-    const [cluster] = await client.getCluster({
-      projectId: options.projectId,
-      zone: options.zones[0],
-      clusterId: options.name
-    })
-    return cluster
-  } catch (e) {
-    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}`
-    log.error(msg)
-    return { endpoint: undefined }
-  }
+  const cluster = await describeCluster(client, options)
+  return cluster || { endpoint: undefined }
 }
 
 function getNodeConfig (options) {
@@ -460,9 +481,9 @@ function grantBucketAccess (storage, options) {
   )
 }
 
-function setRoles (iam, options) {
+function setRoles (cloud, options) {
   log.info(`setting service account roles ${options.projectId}`)
-  return iam.assignRoles(
+  return cloud.assignRoles(
     options.projectId,
     'serviceAccount',
     options.serviceAccount,
@@ -493,19 +514,22 @@ function wait (ms) {
   })
 }
 
-module.exports = function (config, resource, iam, client, storage, events) {
+module.exports = function (config, resource, cloud, client, storage, events) {
   return {
-    create: create.bind(null, resource, iam, client, storage, events, config),
+    create: create.bind(null, resource, cloud, client, storage, events, config),
     createCluster: createCluster.bind(null, client),
     createProject: createProject.bind(null, resource),
-    createClusterService: createClusterService.bind(null, iam),
-    fixBilling: fixBilling.bind(null, iam),
-    getAccountCredentials: getAccountCredentials.bind(null, iam),
+    createClusterService: createClusterService.bind(null, cloud),
+    describeCluster: describeCluster,
+    fixBilling: fixBilling.bind(null, cloud),
+    getAccountCredentials: getAccountCredentials.bind(null, cloud),
     getClusterConfig,
+    getClusterDetails,
     getNodeConfig,
     getRegions: meta.getRegions,
     getZones: meta.getZones,
+    getAPIVersions: cloud.getAPIVersions.bind(cloud),
     grantBucketAccess: grantBucketAccess.bind(null, storage),
-    setRoles: setRoles.bind(null, iam)
+    setRoles: setRoles.bind(null, cloud)
   }
 }

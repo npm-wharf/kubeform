@@ -16,7 +16,7 @@ function build () {
     },
     auth: {
       alias: 'a',
-      description: 'the auth file containing credentials for use witht he provider',
+      description: 'the auth file containing credentials for use with the provider',
       required: true
     },
     organization: {
@@ -30,6 +30,10 @@ function build () {
     file: {
       alias: 'f',
       default: `./cluster-${Date.now()}.json`
+    },
+    credentials: {
+      alias: 'c',
+      description: 'a JSON file containing service account credentials to reuse for the cluster'
     },
     verbose: {
       describe: 'output verbose logging',
@@ -46,6 +50,9 @@ async function handle (Kubeform, debugOut, args) {
   if (args.auth) {
     process.env.GOOGLE_APPLICATION_CREDENTIALS = args.auth
   }
+  if (args.credentials) {
+    process.env.SERVICE_ACCOUNT_CREDENTIALS = args.credentials
+  }
   if (args.organization) {
     process.env.GOOGLE_ORGANIZATION_ID = args.organization
   }
@@ -60,6 +67,7 @@ async function handle (Kubeform, debugOut, args) {
 
   const kube = new Kubeform({
     authFile: args.auth,
+    credFile: args.credentials,
     billingAccount: args.billing,
     organizationId: args.organization,
     provider: args.provider

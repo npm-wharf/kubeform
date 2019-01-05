@@ -8,8 +8,16 @@ const yaml = require('js-yaml')
 const SECRET_RGX = /(pass$|password|passwd|secret|secrt|scrt|secure)/i
 
 const prompt = inquirer.createPromptModule()
+let APIVersions
+const getVersions = async (kube, data) => {
+  if (APIVersions) {
+    return APIVersions
+  }
+  APIVersions = await kube.getAPIVersions(data.projectId, data.zones[0])
+  return APIVersions
+}
 
-function acquireTokens (provider, tokens, defaults = {}) {
+async function acquireTokens (kube, provider, tokens, defaults = {}) {
   const prompts = tokens.reduce((acc, token) => {
     const list = GEO_LIST[provider]
     const settings = {
@@ -50,6 +58,16 @@ function acquireTokens (provider, tokens, defaults = {}) {
     } else if (token === 'serviceAccount') {
       settings.default = (data) => {
         return `${data.projectId}-k8s-sa`
+      }
+    } else if (token === 'version') {
+      settings.type = 'list'
+      settings.default = async (data) => {
+        const { defaultClusterVersion } = await getVersions(kube, data)
+        return defaultClusterVersion
+      }
+      settings.choices = async (data) => {
+        const { validMasterVersions } = await getVersions(kube, data)
+        return validMasterVersions
       }
     }
     acc.push(settings)

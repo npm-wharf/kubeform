@@ -8,13 +8,14 @@ const resource = {
   getProjects: () => {}
 }
 
-const iam = {
+const cloud = {
   getRoles: () => {},
   assignBilling: () => {},
   assignRoles: () => {},
   createCredentials: () => {},
   createServiceAccount: () => {},
-  enableService: () => {}
+  enableService: () => {},
+  getAPIVersions: () => {}
 }
 
 const clusters = {
@@ -54,7 +55,7 @@ describe('Google Provider', function () {
       serviceAccount: 'test-service-account',
       readableBuckets: ['setup'],
       zones: ['us-central1-a'],
-      version: '1.8',
+      version: '1.8.1-gke.1',
       description: 'a test cluster',
       worker: {
         cores: 4,
@@ -130,7 +131,7 @@ describe('Google Provider', function () {
           provider: 'CALICO'
         },
         clusterIpv4Cidr: undefined,
-        initialClusterVersion: '1.8',
+        initialClusterVersion: '1.8.1-gke.1',
         locations: ['us-central1-a'],
         masterAuth: {
           clientCertificateConfig: {
@@ -280,7 +281,7 @@ describe('Google Provider', function () {
   describe('when creating everything', function () {
     describe('and all steps succeed', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       let storage
@@ -289,11 +290,11 @@ describe('Google Provider', function () {
       before(function () {
         events = new EventEmitter()
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
         storage = Storage(bucket)
         bucketMock = sinon.mock(bucket.iam)
-        provider = Provider({}, resource, iam, clusters, storage, events)
+        provider = Provider({}, resource, cloud, clusters, storage, events)
         resourceMock.expects('getProjects')
           .resolves([[]])
         resourceMock.expects('createProject')
@@ -315,11 +316,11 @@ describe('Google Provider', function () {
             'done'
           ])
 
-        iamMock.expects('assignBilling')
+        cloudMock.expects('assignBilling')
           .withArgs('test-project', 'fake-billing-account-id')
           .resolves(true)
 
-        iamMock.expects('createServiceAccount')
+        cloudMock.expects('createServiceAccount')
           .withArgs(
             'test-project',
             'test-project-k8s-sa',
@@ -327,13 +328,13 @@ describe('Google Provider', function () {
           )
           .resolves(true)
 
-        iamMock.expects('createCredentials')
+        cloudMock.expects('createCredentials')
           .withArgs('test-project', 'test-project-k8s-sa')
           .resolves({
             credentials: 'fake'
           })
 
-        iamMock.expects('assignRoles')
+        cloudMock.expects('assignRoles')
           .withArgs(
             'test-project',
             'serviceAccount',
@@ -361,26 +362,26 @@ describe('Google Provider', function () {
             zone: 'us-central1-a',
             clusterId: 'npme-test'
           })
-          .resolves([
-            { endpoint: '1.1.1.1' }
-          ])
+          .exactly(2)
+          .onCall(0).rejects([new Error('no cluster')])
+          .onCall(1).resolves([ { endpoint: '1.1.1.1' } ])
 
-        iamMock.expects('enableService')
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'servicemanagement.googleapis.com')
           .resolves()
-        iamMock.expects('enableService')
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'cloudapis.googleapis.com')
           .resolves()
-        iamMock.expects('enableService')
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'compute.googleapis.com')
           .resolves()
-        iamMock.expects('enableService')
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'container.googleapis.com')
           .resolves()
-        iamMock.expects('enableService')
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'storage-component.googleapis.com')
           .resolves()
-        iamMock.expects('enableService')
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'storage-api.googleapis.com')
           .resolves()
 
@@ -406,13 +407,13 @@ describe('Google Provider', function () {
       it('should make expected calls', function () {
         clustersMock.verify()
         resourceMock.verify()
-        iamMock.verify()
+        cloudMock.verify()
         bucketMock.verify()
       })
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
         bucketMock.restore()
       })
@@ -422,14 +423,14 @@ describe('Google Provider', function () {
   describe('when creating the cluster', function () {
     describe('and client call fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
         clustersMock.expects('createCluster')
           .withArgs(clusterConfiguration)
           .rejects(new Error('invalid'))
@@ -442,21 +443,21 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and client call succeeds', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
         clustersMock.expects('createCluster')
           .withArgs(clusterConfiguration)
           .resolves([{
@@ -481,7 +482,7 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
@@ -490,14 +491,14 @@ describe('Google Provider', function () {
   describe('when creating project', function () {
     describe('and resource call fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
         resourceMock.expects('getProjects')
           .resolves([[]])
         resourceMock.expects('createProject')
@@ -523,21 +524,21 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and operation promise fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
         resourceMock.expects('getProjects')
           .resolves([[]])
         resourceMock.expects('createProject')
@@ -569,21 +570,21 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and project creation is redundant', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
         resourceMock.expects('getProjects')
           .resolves([[
             {
@@ -620,21 +621,21 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and project creation succeeds', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
         resourceMock.expects('getProjects')
           .resolves([[{id: 'other-project'}]])
         resourceMock.expects('createProject')
@@ -673,7 +674,7 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
@@ -682,15 +683,15 @@ describe('Google Provider', function () {
   describe('when creating service account', function () {
     describe('and iam call fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
-        iamMock.expects('createServiceAccount')
+        provider = Provider({}, resource, cloud, clusters)
+        cloudMock.expects('createServiceAccount')
           .withArgs(
             'test-project',
             'test-project-sa',
@@ -708,23 +709,23 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and iam succeeds', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       let options
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
-        iamMock.expects('createServiceAccount')
+        provider = Provider({}, resource, cloud, clusters)
+        cloudMock.expects('createServiceAccount')
           .withArgs(
             'test-project',
             'sa',
@@ -752,7 +753,7 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
@@ -761,18 +762,18 @@ describe('Google Provider', function () {
   describe('when fixing billing association for project', function () {
     describe('and iam call fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
-        iamMock.expects('enableService')
+        provider = Provider({}, resource, cloud, clusters)
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'cloudbilling.googleapis.com')
           .resolves()
-        iamMock.expects('assignBilling')
+        cloudMock.expects('assignBilling')
           .withArgs('test-project', 'fake-billing-account-id')
           .rejects(new Error('invalid'))
       })
@@ -787,25 +788,25 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and iam succeeds', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
-        iamMock.expects('enableService')
+        provider = Provider({}, resource, cloud, clusters)
+        cloudMock.expects('enableService')
           .withArgs('test-project', 'cloudbilling.googleapis.com')
           .resolves()
-        iamMock.expects('assignBilling')
+        cloudMock.expects('assignBilling')
           .withArgs('test-project', 'fake-billing-account-id')
           .resolves(true)
       })
@@ -819,7 +820,7 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
@@ -828,15 +829,15 @@ describe('Google Provider', function () {
   describe('when getting account credentials', function () {
     describe('and iam call fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
-        iamMock.expects('createCredentials')
+        provider = Provider({}, resource, cloud, clusters)
+        cloudMock.expects('createCredentials')
           .withArgs('test-project', 'test-account')
           .rejects(new Error('what?'))
       })
@@ -850,22 +851,22 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and iam succeeds', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
-        iamMock.expects('createCredentials')
+        provider = Provider({}, resource, cloud, clusters)
+        cloudMock.expects('createCredentials')
           .withArgs('test-project', 'test-account')
           .resolves({
             credentials: 'fake'
@@ -883,7 +884,7 @@ describe('Google Provider', function () {
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
@@ -891,14 +892,14 @@ describe('Google Provider', function () {
 
   describe('when getting cluster configuration', function () {
     let resourceMock
-    let iamMock
+    let cloudMock
     let clustersMock
     let provider
     before(function () {
       resourceMock = sinon.mock(resource)
-      iamMock = sinon.mock(iam)
+      cloudMock = sinon.mock(cloud)
       clustersMock = sinon.mock(clusters)
-      provider = Provider({}, resource, iam, clusters)
+      provider = Provider({}, resource, cloud, clusters)
     })
 
     it('should provide valid google config format', function () {
@@ -908,21 +909,21 @@ describe('Google Provider', function () {
 
     after(function () {
       resourceMock.restore()
-      iamMock.restore()
+      cloudMock.restore()
       clustersMock.restore()
     })
   })
 
   describe('when getting node configuration', function () {
     let resourceMock
-    let iamMock
+    let cloudMock
     let clustersMock
     let provider
     before(function () {
       resourceMock = sinon.mock(resource)
-      iamMock = sinon.mock(iam)
+      cloudMock = sinon.mock(cloud)
       clustersMock = sinon.mock(clusters)
-      provider = Provider({}, resource, iam, clusters)
+      provider = Provider({}, resource, cloud, clusters)
     })
 
     it('should provide valid google config format', function () {
@@ -960,7 +961,7 @@ describe('Google Provider', function () {
 
     after(function () {
       resourceMock.restore()
-      iamMock.restore()
+      cloudMock.restore()
       clustersMock.restore()
     })
   })
@@ -968,16 +969,16 @@ describe('Google Provider', function () {
   describe('when setting roles', function () {
     describe('and assign roles fails', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
 
-        iamMock.expects('assignRoles')
+        cloudMock.expects('assignRoles')
           .withArgs(
             'test-project',
             'serviceAccount',
@@ -994,28 +995,28 @@ describe('Google Provider', function () {
       })
 
       it('should have made expected iam calls', function () {
-        iamMock.verify()
+        cloudMock.verify()
       })
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })
 
     describe('and calls succeed', function () {
       let resourceMock
-      let iamMock
+      let cloudMock
       let clustersMock
       let provider
       before(function () {
         resourceMock = sinon.mock(resource)
-        iamMock = sinon.mock(iam)
+        cloudMock = sinon.mock(cloud)
         clustersMock = sinon.mock(clusters)
-        provider = Provider({}, resource, iam, clusters)
+        provider = Provider({}, resource, cloud, clusters)
 
-        iamMock.expects('assignRoles')
+        cloudMock.expects('assignRoles')
           .withArgs(
             'test-project',
             'serviceAccount',
@@ -1032,12 +1033,12 @@ describe('Google Provider', function () {
       })
 
       it('should have made expected iam calls', function () {
-        iamMock.verify()
+        cloudMock.verify()
       })
 
       after(function () {
         resourceMock.restore()
-        iamMock.restore()
+        cloudMock.restore()
         clustersMock.restore()
       })
     })

@@ -214,11 +214,13 @@ const REGIONS = {
 }
 
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
+const VERSION_REGEX = /^[0-9]+[.][0-9]+[.][0-9]+[-]gke[.].+$/
 
 const VALIDATION = joi.object().keys({
   name: joi.string().min(3).max(30).required(),
   projectId: joi.string(),
   provider: joi.string(),
+  version: joi.string().regex(VERSION_REGEX),
   organizationId: joi.string().required(),
   billingAccount: joi.string().required(),
   zones: joi.array().items(joi.string()),
@@ -227,7 +229,6 @@ const VALIDATION = joi.object().keys({
   serviceAccount: joi.string(),
   readableBuckets: joi.array().items(joi.string()),
   writeableBuckets: joi.array().items(joi.string()),
-  version: joi.string(),
   basicAuth: joi.boolean(),
   user: joi.string(),
   password: joi.string(),

@@ -3,6 +3,9 @@ module.exports = {
   create: () => {
     throw new Error(MESSAGE)
   },
+  getAPIVersions: () => {
+    throw new Error(MESSAGE)
+  },
   getRegions: () => {
     throw new Error(MESSAGE)
   },

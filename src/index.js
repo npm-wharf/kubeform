@@ -3,6 +3,7 @@ const EventEmitter = require('events')
 const path = require('path')
 const fs = require('fs')
 const inquire = require('./commands/inquire')
+const log = require('bole')('kubeform')
 
 class API extends EventEmitter {
   constructor (options) {
@@ -12,11 +13,23 @@ class API extends EventEmitter {
   }
 
   create (options) {
+    const credFile = this.config.credFile
+    if (credFile) {
+      const credPath = path.resolve(credFile)
+      log.info(`loading service account credentials from '${credPath}'`)
+      if (fs.existsSync(credPath)) {
+        options.credentials = inquire.loadTokens(credPath)
+      }
+    }
     return this.provider.create(options)
   }
 
   getRegions () {
     return this.provider.getRegions()
+  }
+
+  getAPIVersions (projectId, zone) {
+    return this.provider.getAPIVersions(projectId, zone)
   }
 
   getZones (region) {
@@ -48,6 +61,7 @@ class API extends EventEmitter {
         data = options.data
       }
     }
+
     let mixed = _.merge(defaults, data, options.tokens || {})
     const missing = REQUIRED_FIELDS.reduce((missing, required) => {
       let obj = mixed
@@ -108,7 +122,7 @@ function changeType (obj, key) {
 }
 
 const REQUIRED_FIELDS = [
-  'name', 'description', 'projectId', 'zones', 'basicAuth',
+  'name', 'description', 'projectId', 'zones', 'version', 'basicAuth',
   'user', 'password', 'organizationId', 'billingAccount',
   'serviceAccount', 'readableBuckets', 'writeableBuckets',
   'managers', 'manager.distributed',
@@ -147,5 +161,5 @@ const FIELD_TYPES = {
   serviceMonitoring: 'boolean',
   serviceLogging: 'boolean',
   readableBuckets: 'array',
-  writeableBuclets: 'array'
+  writeableBuckets: 'array'
 }
