@@ -89,8 +89,8 @@ async function describeCluster (client, options) {
     log.info(`cluster status is ${cluster.status}`)
     return cluster
   } catch (e) {
-    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}`
-    log.error(msg)
+    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}. If this is a new cluster, this error may be safely ignored.`
+    log.warn(msg)
     return false
   }
 }

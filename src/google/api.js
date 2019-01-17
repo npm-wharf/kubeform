@@ -228,7 +228,8 @@ CloudAPI.prototype.getServiceAccount = function getServiceAccount (projectId, ac
       return result
     },
     err => {
-      log.error(`failed to get service account with ${err.message}`)
+      const msg = `Failed to get service account with ${err.message}. If this is a new service account, this error may be safely ignored.`
+      log.warn(msg)
       return undefined
     }
   )
