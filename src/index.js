@@ -1,4 +1,3 @@
-const _ = require('fauxdash')
 const EventEmitter = require('events')
 const path = require('path')
 const fs = require('fs')
@@ -62,7 +61,7 @@ class API extends EventEmitter {
       }
     }
 
-    let mixed = _.merge(defaults, data, options.tokens || {})
+    let mixed = Object.assign(defaults, data, options.tokens || {})
     const missing = REQUIRED_FIELDS.reduce((missing, required) => {
       let obj = mixed
       if (required.indexOf('.')) {

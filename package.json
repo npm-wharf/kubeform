@@ -13,7 +13,6 @@
     "@google-cloud/storage": "^1.7.0",
     "bluebird": "^3.5.2",
     "bole": "^3.0.2",
-    "fauxdash": "^1.4.0",
     "inquirer": "^6.2.0",
     "joi": "^13.4.0",
     "js-yaml": "^3.12.0",
