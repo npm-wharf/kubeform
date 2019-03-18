@@ -1,6 +1,7 @@
-const bole = require('bole')
-const log = bole('kubeform')
+const pino = require('pino')
+const Kubeform = require('../index')
 const path = require('path')
+const os = require('os')
 const fs = require('fs')
 
 function build () {
@@ -17,6 +18,7 @@ function build () {
     auth: {
       alias: 'a',
       description: 'the auth file containing credentials for use with the provider',
+      default: path.join(os.homedir(), '.gsauth.json'),
       required: true
     },
     organization: {
@@ -43,7 +45,7 @@ function build () {
   }
 }
 
-async function handle (Kubeform, debugOut, args) {
+async function handle (args) {
   if (args.provider) {
     process.env.KUBE_SERVICE = args.provider
   }
@@ -60,9 +62,12 @@ async function handle (Kubeform, debugOut, args) {
     process.env.GOOGLE_BILLING_ID = args.billing
   }
 
-  bole.output({
+  const log = pino({
     level: args.verbose ? 'debug' : 'info',
-    stream: debugOut
+    name: 'kubeform',
+    prettyPrint: {
+      translateTime: true
+    }
   })
 
   const kube = new Kubeform({
@@ -93,11 +98,11 @@ async function handle (Kubeform, debugOut, args) {
   }
 }
 
-module.exports = function (Kubeform, debugOut) {
+module.exports = function () {
   return {
     command: 'provision <configPath> [options]',
     desc: 'provision a Kubernetes cluster',
     builder: build(),
-    handler: handle.bind(null, Kubeform, debugOut)
+    handler: handle
   }
 }

@@ -1,4 +1,4 @@
-const log = require('bole')('kubeform.google')
+const log = require('pino')({name: 'kubeform.google', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info'})
 const meta = require('./metadata')()
 const uuid = require('uuid')
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
