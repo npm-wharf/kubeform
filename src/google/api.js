@@ -7,7 +7,6 @@ function CloudAPI (options) {
     options = common.util.normalizeArguments(this, options)
     return new CloudAPI(options)
   }
-
   const config = {
     baseUrl: 'https://iam.googleapis.com/v1',
     projectIdRequired: false,

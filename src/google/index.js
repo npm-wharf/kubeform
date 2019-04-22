@@ -7,18 +7,22 @@ const Provider = require('./provider')
 module.exports = function (config, events) {
   const resource = Resource({
     projectId: config.organizationId,
-    keyFileName: config.authFile
+    keyFileName: config.authFile,
+    credentials: config.credentials
   })
   const cloud = Cloud({
-    projectId: config.organizationId,
-    keyFileName: config.authFile
+    keyFileName: config.authFile,
+    projectId: config.projectId,
+    credentials: config.credentials
   })
   const storage = Storage({
     projectId: config.organizationId,
-    keyFileName: config.authFile
+    keyFileName: config.authFile,
+    credentials: config.credentials
   })
   const client = new container.v1.ClusterManagerClient({
-    keyFileName: config.authFile
+    keyFileName: config.authFile,
+    credentials: config.credentials
   })
   return Provider(config, resource, cloud, client, storage, events)
 }

@@ -13,13 +13,16 @@ class API extends EventEmitter {
   }
 
   create (options) {
-    const credFile = this.config.credFile
+    const {credentials, projectId, credFile} = this.config
     if (credFile) {
       const credPath = path.resolve(credFile)
       log.info(`loading service account credentials from '${credPath}'`)
       if (fs.existsSync(credPath)) {
         options.credentials = inquire.loadTokens(credPath)
       }
+    } else if (credentials) {
+      options.credentials = credentials
+      options.projectId = projectId
     }
     return this.provider.create(options)
   }
