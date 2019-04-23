@@ -29,7 +29,7 @@ function build () {
     },
     provider: {
       alias: 'p',
-      description: 'specify which cloud provider to use to select data centers from',
+      description: 'specify which cloud provider to use to select data centers from: gke (Google) or eks (Amazon)',
       default: 'gke'
     },
     verbose: {
@@ -54,6 +54,7 @@ async function handle (args) {
   }
   if (args.auth) {
     process.env.GOOGLE_APPLICATION_CREDENTIALS = args.auth
+    process.env.AWS_SHARED_CREDENTIALS_FILE = args.auth
   }
   const kube = new Kubeform({
     authFile: args.auth,

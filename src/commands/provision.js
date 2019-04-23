@@ -12,7 +12,7 @@ function build () {
     },
     provider: {
       alias: 'p',
-      description: 'the provider to use to provision the Kubernetes cluster',
+      description: 'the provider to use to provision the Kubernetes cluster: gke (Google) or eks (Amazon)',
       default: process.env.KUBE_SERVICE
     },
     auth: {
@@ -51,6 +51,7 @@ async function handle (args) {
   }
   if (args.auth) {
     process.env.GOOGLE_APPLICATION_CREDENTIALS = args.auth
+    process.env.AWS_SHARED_CREDENTIALS_FILE = args.auth
   }
   if (args.credentials) {
     process.env.SERVICE_ACCOUNT_CREDENTIALS = args.credentials

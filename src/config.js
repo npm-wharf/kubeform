@@ -1,6 +1,6 @@
 module.exports = function (options) {
   return {
-    authFile: options.authFile || process.env.GOOGLE_APPLICATIONS_CREDENTIALS,
+    authFile: options.authFile || process.env.GOOGLE_APPLICATIONS_CREDENTIALS || process.env.AWS_SHARED_CREDENTIALS_FILE,
     credFile: options.credFile || process.env.SERVICE_ACCOUNT_CREDENTIALS,
     billingAccount: options.billingAccount || process.env.GOOGLE_BILLING_ID,
     organizationId: options.organizationId || process.env.GOOGLE_ORGANIZATION_ID,

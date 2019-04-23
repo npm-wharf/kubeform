@@ -209,5 +209,72 @@ const GEO_LIST = {
       zones: [ 'a', 'b', 'c' ],
       geography: 'Eemshaven, Netherlands'
     }
+  ],
+  eks: [
+    {
+      region: 'us-east-1',
+      zones: ['a', 'b', 'c', 'd', 'e', 'f'],
+      geography: 'Northern Virgina'
+    },
+    {
+      region: 'us-east-2',
+      zones: ['a', 'b', 'c'],
+      geography: 'Ohio'
+    },
+    {
+      region: 'us-west-2',
+      zones: ['a', 'b', 'c', 'd'],
+      geography: 'Oregon'
+    },
+    {
+      region: 'eu-west-1',
+      zones: ['a', 'b', 'c'],
+      geography: 'Ireland'
+    },
+    {
+      region: 'eu-central-1',
+      zones: ['a', 'b', 'c'],
+      geography: 'Frankfurt'
+    },
+    {
+      region: 'eu-west-2',
+      zones: ['a', 'b', 'c'],
+      geography: 'London'
+    },
+    {
+      region: 'eu-west-3',
+      zones: ['a', 'b', 'c'],
+      geography: 'Paris'
+    },
+    {
+      region: 'eu-north-1',
+      zones: ['a', 'b', 'c'],
+      geography: 'Stockholm'
+    },
+    {
+      region: 'ap-southeast-1',
+      zones: ['a', 'b', 'c'],
+      geography: 'Singapore'
+    },
+    {
+      region: 'ap-northeast-1',
+      zones: ['a', 'b', 'c', 'd'],
+      geography: 'Tokyo'
+    },
+    {
+      region: 'ap-southeast-2',
+      zones: ['a', 'b', 'c'],
+      geography: 'Sydney'
+    },
+    {
+      region: 'ap-northeast-2',
+      zones: ['a', 'b'],
+      geography: 'Seoul'
+    },
+    {
+      region: 'ap-south-1',
+      zones: ['a', 'b'],
+      geography: 'Mumbai'
+    }
   ]
 }
