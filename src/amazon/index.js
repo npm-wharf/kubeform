@@ -1,6 +1,3 @@
-const Resource = require('@google-cloud/resource')
-const container = require('@google-cloud/container')
-const Storage = require('@google-cloud/storage')
 const Cloud = require('./api')
 const Provider = require('./provider')
 
