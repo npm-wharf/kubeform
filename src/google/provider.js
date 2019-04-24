@@ -229,9 +229,15 @@ function createClusterService (cloud, options) {
   )
 }
 
-function enableServices (cloud, options, services) {
-  log.info(`enabling services ${services.join(', ')} for project ${options.projectId}`)
-  return Promise.mapSeries(services, service => cloud.enableService(options.projectId, service))
+async function enableServices (cloud, options, services) {
+  const enabled = await cloud.getEnabledServices(options.projectId)
+  const newServices = services.filter(service => !enabled.includes(service))
+  if (newServices.length === 0) {
+    log.info(`no new services to add for project ${options.projectId}`)
+    return
+  }
+  log.info(`enabling services ${newServices.join(', ')} for project ${options.projectId}`)
+  return Promise.mapSeries(newServices, service => cloud.enableService(options.projectId, service))
 }
 
 function fixBilling (cloud, options) {

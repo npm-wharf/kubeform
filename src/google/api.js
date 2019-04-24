@@ -39,9 +39,11 @@ CloudAPI.prototype.assignBilling = async function assignBilling (projectId, bill
 
 CloudAPI.prototype.assignRoles = async function assignRoles (projectId, accountType, accountName, roles) {
   let assigned = await this.getRoles(projectId)
+  const existingRoles = assigned.bindings.map(({role}) => role)
+  const newRoles = roles.filter(role => !existingRoles.includes(role))
   let error
-  while (roles.length > 0) {
-    const role = roles.pop()
+  while (newRoles.length > 0) {
+    const role = newRoles.pop()
     try {
       assigned = await this.assignRole(projectId, assigned, role, accountType, accountName)
     } catch (e) {
@@ -200,6 +202,17 @@ CloudAPI.prototype.enableService = function enableService (projectId, serviceNam
   )
 }
 
+CloudAPI.prototype.getEnabledServices = function getEnabledServices (projectId) {
+  return this.asyncReq({
+    method: 'GET',
+    uri: `https://serviceusage.googleapis.com/v1/projects/${projectId}/services?filter=state:ENABLED`
+  }).then(result => {
+    return result.services
+      .map(({name}) => name)
+      .map(name => name.match(/\/([^/]+)$/)[1])
+  })
+}
+
 CloudAPI.prototype.getRoles = function getRoles (projectId) {
   return this.asyncReq({
     method: 'POST',
@@ -241,7 +254,7 @@ CloudAPI.prototype.waitForService = async function waitForService (operation) {
     ready = await this.checkService(operation)
     if (!ready) {
       await wait(pause)
-      pause *= 0.5
+      pause += 500
     }
   } while (!ready)
   return ready

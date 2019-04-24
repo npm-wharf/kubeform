@@ -25,6 +25,11 @@ describe('Google Cloud APIs', function () {
     revokeScope = nock(REVOKE_URL)
   })
 
+  after(function () {
+    delete process.env.GOOGLE_APPLICATION_CREDENTIALS
+    nock.cleanAll()
+  })
+
   describe('when creating a service account', function () {
     let scope
     let cloud
@@ -568,10 +573,42 @@ describe('Google Cloud APIs', function () {
           .should.eventually.eql(true)
       })
     })
+  })
 
-    after(function () {
-      delete process.env.GOOGLE_APPLICATION_CREDENTIALS
-      nock.cleanAll()
+  describe('when getting enabled services', function () {
+    let cloud
+    let scope
+    before(function () {
+      setAuthResponse(authScope)
+      setRevokeResponse(revokeScope)
+      scope = nock('https://serviceusage.googleapis.com/v1')
+        .matchHeader('authorization', (val) => {
+          // the bearer token changes each time because
+          // blowfish lol, this is good enough to check
+          // that the module is correctly loading a
+          // keyfile and using it to create an authorization
+          // header
+          return /^Bearer[ ]ya29[.]/.test(val)
+        })
+      cloud = new Cloud({
+        projectId: 'test-org',
+        keyFile: './spec/keys/test-key.json'
+      })
+    })
+
+    describe('and call succeeds', function () {
+      before(function () {
+        scope.get(
+          '/projects/test-org/services?filter=state:ENABLED'
+        ).reply(200, JSON.stringify({
+          services: [{ name: 'test-org/services/imaginary.googleapis.com' }]
+        }))
+      })
+
+      it('it should succeed', async function () {
+        await cloud.getEnabledServices('test-org')
+          .should.eventually.eql(['imaginary.googleapis.com'])
+      })
     })
   })
 })

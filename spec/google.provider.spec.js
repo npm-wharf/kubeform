@@ -15,6 +15,7 @@ const cloud = {
   createCredentials: () => {},
   createServiceAccount: () => {},
   enableService: () => {},
+  getEnabledServices: () => ['cloudapis.googleapis.com'],
   getAPIVersions: () => {}
 }
 
@@ -368,9 +369,6 @@ describe('Google Provider', function () {
 
         cloudMock.expects('enableService')
           .withArgs('test-project', 'servicemanagement.googleapis.com')
-          .resolves()
-        cloudMock.expects('enableService')
-          .withArgs('test-project', 'cloudapis.googleapis.com')
           .resolves()
         cloudMock.expects('enableService')
           .withArgs('test-project', 'compute.googleapis.com')
