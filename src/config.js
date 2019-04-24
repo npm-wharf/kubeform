@@ -6,6 +6,7 @@ module.exports = function (options) {
     organizationId: options.organizationId || process.env.GOOGLE_ORGANIZATION_ID,
     provider: options.provider || process.env.KUBERNETES_PROVIDER || 'gke',
     projectId: options.projectId,
+    applicationCredentials: options.applicationCredentials,
     credentials: options.credentials
   }
 }

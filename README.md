@@ -110,7 +110,10 @@ After calling `create` the instance will emit events to provide some indication 
 
 The constructor takes an optional set of properties in the hash to provide required settings directly instead of requiring environment variables:
 
- * `authFile`: the location of the file containing credentials to use for authentication
+ * `authFile`: the location of the file containing credentials to use for authentication when creating projects and clusters
+ * `applicationCredentials`: the same as above, except the literal credentials object
+ * `credFile`: the location of the file containing credentials to use for within the cluster's project for basic operations.  If omitted, new credentials will be created for the project
+ * `credentials`: the same as above, except the literal credentials object
  * `billingAccount`: the id of the billing account to associate with the project & cluster
  * `organizationId`: the organization identity
  * `provider`: the name of the Kubernetes provider currently `gke` or `none`

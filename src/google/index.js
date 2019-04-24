@@ -8,21 +8,21 @@ module.exports = function (config, events) {
   const resource = Resource({
     projectId: config.organizationId,
     keyFileName: config.authFile,
-    credentials: config.credentials
+    credentials: config.applicationCredentials
   })
   const cloud = Cloud({
     keyFileName: config.authFile,
     projectId: config.projectId,
-    credentials: config.credentials
+    credentials: config.applicationCredentials
   })
   const storage = Storage({
     projectId: config.organizationId,
     keyFileName: config.authFile,
-    credentials: config.credentials
+    credentials: config.applicationCredentials
   })
   const client = new container.v1.ClusterManagerClient({
     keyFileName: config.authFile,
-    credentials: config.credentials
+    credentials: config.applicationCredentials
   })
   return Provider(config, resource, cloud, client, storage, events)
 }
