@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.4.0"></a>
+# [1.4.0](https://github.com/npm-wharf/kubeform/compare/v1.3.2...v1.4.0) (2019-04-24)
+
+
+### Bug Fixes
+
+* differentiate between root-level applicationCredentials and project level credentials ([8a2b19a](https://github.com/npm-wharf/kubeform/commit/8a2b19a))
+
+
+### Features
+
+* check to see if services/roles are enabled before adding them ([#6](https://github.com/npm-wharf/kubeform/issues/6)) ([e122b29](https://github.com/npm-wharf/kubeform/commit/e122b29))
+
+
+
 <a name="1.3.2"></a>
 ## [1.3.2](https://github.com/npm-wharf/kubeform/compare/v1.3.1...v1.3.2) (2019-04-22)
 
