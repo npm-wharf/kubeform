@@ -11,8 +11,8 @@ module.exports = function (config, events) {
     credentials: config.applicationCredentials
   })
   const cloud = Cloud({
+    projectId: config.organizationId,
     keyFileName: config.authFile,
-    projectId: config.projectId,
     credentials: config.applicationCredentials
   })
   const storage = Storage({
