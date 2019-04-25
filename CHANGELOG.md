@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.4.1"></a>
+## [1.4.1](https://github.com/npm-wharf/kubeform/compare/v1.4.0...v1.4.1) (2019-04-25)
+
+
+### Bug Fixes
+
+* use the real clsuter password, if it exists ([1a84786](https://github.com/npm-wharf/kubeform/commit/1a84786))
+
+
+
 <a name="1.4.0"></a>
 # [1.4.0](https://github.com/npm-wharf/kubeform/compare/v1.3.2...v1.4.0) (2019-04-24)
 
