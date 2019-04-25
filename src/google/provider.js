@@ -428,7 +428,7 @@ function getProject (resource, options) {
         return match
       },
       err => {
-        log.err(`failed to get a project list to check for project ${options.projectId} existence with ${err.message}`)
+        log.error(`failed to get a project list to check for project ${options.projectId} existence with ${err.message}`)
         return undefined
       }
     )
