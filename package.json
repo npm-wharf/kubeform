@@ -1,6 +1,6 @@
 {
   "name": "@npm-wharf/kubeform",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "a module for programatically provisioning kubernetes clusters via cloud provider APIs",
   "main": "src/index.js",
   "bin": {
