@@ -1,4 +1,4 @@
-const log = require('pino')({name: 'kubeform.google', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info'})
+const log = require('pino')({name: 'kubeform.google'})
 const meta = require('./metadata')()
 const uuid = require('uuid')
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
@@ -95,61 +95,65 @@ async function describeCluster (client, options) {
   }
 }
 
-function create (resource, cloud, client, storage, events, config, opts) {
+async function create (resource, cloud, client, storage, events, config, opts) {
   const options = meta.mergeOptions(config, opts)
   meta.validateOptions(options)
-  return createProject(resource, options)
-    .then(async ({response}) => {
-      options.projectNumber = response.projectNumber
-      return response
-    })
-    .then(() => enableServices(cloud, options, BASELINE_SERVICES))
-    .then(() => fixBilling(cloud, options))
-    .then(() => enableServices(cloud, options, SUPPORTING_SERVICES))
-    .then(() => createClusterService(cloud, options))
-    .then(async () => {
-      if (!options.credentials) {
-        options.credentials = await getAccountCredentials(cloud, options)
-      } else {
-        log.info(`using provided service account credentials`)
-      }
-      return options.credentials
-    })
-    .then(() => setRoles(cloud, options))
-    .then(() => events.emit('prerequisites-created', {
-      provider: 'gke',
-      prerequisites: [
-        'project-created',
-        'service-apis-enabled',
-        'billing-associated',
-        'service-account-created',
-        'account-credentials-acquired',
-        'cloud-roles-assigned'
-      ]
-    }))
-    .then(() => grantBucketAccess(storage, options))
-    .then(() => events.emit('bucket-permissions-set', {
-      readAccess: [ options.readableBuckets ],
-      writeAccess: [ options.writableBuckets ]
-    }))
-    .then(() => createCluster(client, options))
-    .then(() => events.emit('cluster-initialized', {
-      kubernetesCluster: getClusterConfig(options)
-    }))
-    .then(() => checkCluster(client, options))
-    .then(async () => {
-      let { endpoint } = await getClusterDetails(client, options)
-      options.masterEndpoint = endpoint
-    })
-    .then(() => options)
+
+  const { response } = await createProject(resource, options)
+  options.projectNumber = response.projectNumber
+
+  await enableServices(cloud, options, BASELINE_SERVICES)
+  await fixBilling(cloud, options)
+  await enableServices(cloud, options, SUPPORTING_SERVICES)
+  await createClusterService(cloud, options)
+
+  if (!options.credentials) {
+    options.credentials = await getAccountCredentials(cloud, options)
+  } else {
+    log.info(`using provided service account credentials`)
+  }
+
+  await setRoles(cloud, options)
+
+  events.emit('prerequisites-created', {
+    provider: 'gke',
+    prerequisites: [
+      'project-created',
+      'service-apis-enabled',
+      'billing-associated',
+      'service-account-created',
+      'account-credentials-acquired',
+      'cloud-roles-assigned'
+    ]
+  })
+
+  await grantBucketAccess(storage, options)
+
+  events.emit('bucket-permissions-set', {
+    readAccess: [ options.readableBuckets ],
+    writeAccess: [ options.writableBuckets ]
+  })
+  await createCluster(client, options)
+
+  events.emit('cluster-initialized', {
+    kubernetesCluster: getClusterConfig(options)
+  })
+
+  await checkCluster(client, options)
+  let { endpoint } = await getClusterDetails(client, options)
+  options.masterEndpoint = endpoint
+
+  return options
 }
 
 async function createCluster (client, options) {
   const existing = await describeCluster(client, options)
   if (existing) {
-    return Promise.resolve(options)
+    options.username = existing.masterAuth.username
+    options.password = existing.masterAuth.password
+    return options
   }
-  const seconds = 60
+  const seconds = 15
   log.info(`creating Kubernetes cluster for project ${options.projectId}`)
   const config = getClusterConfig(options)
   return client.createCluster(config)
