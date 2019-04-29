@@ -1,40 +1,3 @@
-const joi = require('joi')
-
-const DEFAULTS = {
-  managers: 1,
-  manager: {
-    distributed: false
-  },
-  worker: {
-    cores: 2,
-    count: 3,
-    memory: '13GB',
-    maxPerInstance: 9,
-    reserved: true,
-    storage: {
-      ephemeral: '0GB',
-      persistent: '100GB'
-    }
-  },
-  flags: {
-    alphaFeatures: false,
-    authedNetworksOnly: false,
-    autoRepair: true,
-    autoScale: false,
-    autoUpgrade: false,
-    basicAuth: true,
-    clientCert: true,
-    includeDashboard: false,
-    legacyAuthorization: false,
-    loadBalanceHTTP: true,
-    maintenanceWindow: '08:00:00Z',
-    networkPolicy: true,
-    privateCluster: false,
-    serviceMonitoring: false,
-    serviceLogging: false
-  }
-}
-
 const MACHINES = [
   {
     name: 'n1-standard-1',
@@ -194,103 +157,7 @@ const MACHINES = [
   }
 ]
 
-const REGIONS = {
-  'asia-east1': ['asia-east1-a', 'asia-east1-b', 'asia-east1-c'],
-  'asia-northeast1': ['asia-northeast1-a', 'asia-northeast1-b', 'asia-northeast1-c'],
-  'asia-south1': ['asia-south1-a', 'asia-south1-b', 'asia-south1-c'],
-  'asia-southeast1': ['asia-southeast1-a', 'asia-southeast1-b', 'asia-southeast1-c'],
-  'australia-southeast1': ['australia-southeast1-a', 'australia-southeast1-b', 'australia-southeast1-c'],
-  'europe-north1': ['europe-north1-a', 'europe-north1-b', 'europe-north1-c'],
-  'europe-west1': ['europe-west1-b', 'europe-west1-c', 'europe-west1-d'],
-  'europe-west2': ['europe-west2-a', 'europe-west2-b', 'europe-west2-c'],
-  'europe-west3': ['europe-west3-a', 'europe-west3-b', 'europe-west3-c'],
-  'europe-west4': ['europe-west4-a', 'europe-west4-b', 'europe-west4-c'],
-  'northamerica-northeast1': ['northamerica-northeast1-a', 'northamerica-northeast1-b', 'northamerica-northeast1-c'],
-  'southamerica-east1': ['southamerica-east1-a', 'southamerica-east1-b', 'southamerica-east1-c'],
-  'us-central1': ['us-central1-a', 'us-central1-b', 'us-central1-c', 'us-central1-f'],
-  'us-east1': ['us-east1-a', 'us-east1-b', 'us-east1-c'],
-  'us-east4': ['us-east4-a', 'us-east4-b', 'us-east4-c'],
-  'us-west1': ['us-west1-a', 'us-west1-b', 'us-west1-c']
-}
-
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
-const VERSION_REGEX = /^[0-9]+[.][0-9]+[.][0-9]+[-]gke[.].+$/
-
-const VALIDATION = joi.object().keys({
-  name: joi.string().min(3).max(30).required(),
-  projectId: joi.string(),
-  provider: joi.string(),
-  version: joi.string().regex(VERSION_REGEX),
-  organizationId: joi.string().required(),
-  billingAccount: joi.string().required(),
-  zones: joi.array().items(joi.string()),
-  description: joi.string(),
-  locations: joi.array().items(joi.string().valid(getAllLocations())),
-  serviceAccount: joi.string(),
-  readableBuckets: joi.array().items(joi.string()),
-  writeableBuckets: joi.array().items(joi.string()),
-  basicAuth: joi.boolean(),
-  user: joi.string(),
-  password: joi.string(),
-  managers: joi.number(),
-  manager: joi.object().keys({
-    distributed: joi.boolean(),
-    network: joi.object().keys({
-      authorizedCidr: joi.array().items(joi.object().keys({
-        name: joi.string(),
-        block: joi.string().regex(/[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}/)
-      }))
-    })
-  }),
-  worker: joi.object().keys({
-    cores: joi.number(),
-    count: joi.number(),
-    min: joi.number(),
-    max: joi.number(),
-    memory: joi.string().regex(/^([0-9]+)(MB|GB)$/),
-    maxPerInstance: joi.number(),
-    reserved: joi.boolean(),
-    maintenanceWindow: joi.string().regex(/^[0-9]{2}[:][0-9]{2}([:][0-9]{2})?Z?$/),
-    storage: joi.object().keys({
-      ephemeral: joi.string().regex(/^([0-9]+)(MB|GB)$/),
-      persistent: joi.string().regex(/^([0-9]+)(MB|GB)$/)
-    }),
-    network: joi.object().keys({
-      range: joi.string().regex(/[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}/),
-      vpc: joi.string()
-    })
-  }),
-  flags: joi.object().keys({
-    alphaFeatures: joi.boolean(),
-    authedNetworksOnly: joi.boolean(),
-    autoRepair: joi.boolean(),
-    autoScale: joi.boolean(),
-    autoUpgrade: joi.boolean(),
-    basicAuth: joi.boolean(),
-    clientCert: joi.boolean(),
-    includeDashboard: joi.boolean(),
-    legacyAuthorization: joi.boolean(),
-    loadBalancedHTTP: joi.boolean(),
-    networkPolicy: joi.boolean(),
-    privateCluster: joi.boolean(),
-    serviceMonitoring: joi.boolean(),
-    serviceLogging: joi.boolean()
-  })
-})
-
-function getAllLocations () {
-  return getAllZones()
-    .concat(
-      getRegions()
-    )
-}
-
-function getAllZones () {
-  const regions = getRegions()
-  return regions.reduce((list, region) => {
-    return list.concat(REGIONS[region])
-  }, [])
-}
 
 function getMachineType (worker) {
   MACHINES.sort((a, b) => {
@@ -321,35 +188,8 @@ function getMachineType (worker) {
   return machine
 }
 
-function getRegions () {
-  return Object.keys(REGIONS)
-}
-
-function getZones (region) {
-  return REGIONS[region]
-}
-
-function mergeOptions (config, options) {
-  const merged = Object.assign({}, DEFAULTS, config, options)
-  merged.serviceAccount = `${merged.projectId || merged.name}-k8s-sa`
-  return merged
-}
-
-function validateOptions (options) {
-  const result = VALIDATION.validate(options, { allowUnknown: true })
-  if (result.error) {
-    throw result.error
-  }
-}
-
 module.exports = function () {
   return {
-    getAllLocations,
-    getAllZones,
-    getMachineType,
-    getRegions,
-    getZones,
-    mergeOptions,
-    validateOptions
+    getMachineType
   }
 }

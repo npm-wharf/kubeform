@@ -1,4 +1,4 @@
-const log = require('pino')({name: 'kubeform.google'})
+const log = require('pino')({ name: 'kubeform.google', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info' })
 const meta = require('./metadata')()
 const uuid = require('uuid')
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
@@ -98,7 +98,6 @@ async function describeCluster (client, options) {
 async function create (resource, cloud, client, storage, events, config, opts) {
   const options = meta.mergeOptions(config, opts)
   meta.validateOptions(options)
-
   const { response } = await createProject(resource, options)
   options.projectNumber = response.projectNumber
 
@@ -200,7 +199,7 @@ async function createProject (resource, options) {
     ([proj, op]) => {
       return op.promise()
         .then(resp => {
-          return {project: proj, response: resp[0].response}
+          return { project: proj, response: resp[0].response }
         })
     }
   ).catch(

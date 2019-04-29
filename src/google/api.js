@@ -1,6 +1,6 @@
 const common = require('@google-cloud/common')
 const util = require('util')
-const log = require('pino')({name: 'kubeform.google-cloud', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info'})
+const log = require('pino')({ name: 'kubeform.google-cloud', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info' })
 
 function CloudAPI (options) {
   if (!(this instanceof CloudAPI)) {

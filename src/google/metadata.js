@@ -1,5 +1,7 @@
 const joi = require('joi')
 
+const zones = require('./zones')
+
 const DEFAULTS = {
   managers: 1,
   manager: {
@@ -194,24 +196,10 @@ const MACHINES = [
   }
 ]
 
-const REGIONS = {
-  'asia-east1': ['asia-east1-a', 'asia-east1-b', 'asia-east1-c'],
-  'asia-northeast1': ['asia-northeast1-a', 'asia-northeast1-b', 'asia-northeast1-c'],
-  'asia-south1': ['asia-south1-a', 'asia-south1-b', 'asia-south1-c'],
-  'asia-southeast1': ['asia-southeast1-a', 'asia-southeast1-b', 'asia-southeast1-c'],
-  'australia-southeast1': ['australia-southeast1-a', 'australia-southeast1-b', 'australia-southeast1-c'],
-  'europe-north1': ['europe-north1-a', 'europe-north1-b', 'europe-north1-c'],
-  'europe-west1': ['europe-west1-b', 'europe-west1-c', 'europe-west1-d'],
-  'europe-west2': ['europe-west2-a', 'europe-west2-b', 'europe-west2-c'],
-  'europe-west3': ['europe-west3-a', 'europe-west3-b', 'europe-west3-c'],
-  'europe-west4': ['europe-west4-a', 'europe-west4-b', 'europe-west4-c'],
-  'northamerica-northeast1': ['northamerica-northeast1-a', 'northamerica-northeast1-b', 'northamerica-northeast1-c'],
-  'southamerica-east1': ['southamerica-east1-a', 'southamerica-east1-b', 'southamerica-east1-c'],
-  'us-central1': ['us-central1-a', 'us-central1-b', 'us-central1-c', 'us-central1-f'],
-  'us-east1': ['us-east1-a', 'us-east1-b', 'us-east1-c'],
-  'us-east4': ['us-east4-a', 'us-east4-b', 'us-east4-c'],
-  'us-west1': ['us-west1-a', 'us-west1-b', 'us-west1-c']
-}
+const REGIONS = zones.reduce((acc, zone) => {
+  acc[zone.region] = zone.zones.map((specifier) => `${zone.region}-${specifier}`)
+  return acc
+}, {})
 
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
 const VERSION_REGEX = /^[0-9]+[.][0-9]+[.][0-9]+[-]gke[.].+$/
@@ -329,6 +317,10 @@ function getZones (region) {
   return REGIONS[region]
 }
 
+function getApiVersions () {
+  return []
+}
+
 function mergeOptions (config, options) {
   const merged = Object.assign({}, DEFAULTS, config, options)
   merged.serviceAccount = `${merged.projectId || merged.name}-k8s-sa`
@@ -348,6 +340,7 @@ module.exports = function () {
     getAllZones,
     getMachineType,
     getRegions,
+    getApiVersions,
     getZones,
     mergeOptions,
     validateOptions

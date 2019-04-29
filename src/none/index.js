@@ -1,15 +1,21 @@
 const MESSAGE = 'the cloud provider is required in order to perform this action'
-module.exports = {
-  create: () => {
+
+class None {
+  create () {
     throw new Error(MESSAGE)
-  },
-  getAPIVersions: () => {
+  }
+
+  getAPIVersions () {
     throw new Error(MESSAGE)
-  },
-  getRegions: () => {
+  }
+
+  getRegions () {
     throw new Error(MESSAGE)
-  },
-  getZones: () => {
+  }
+
+  getZones () {
     throw new Error(MESSAGE)
   }
 }
+
+module.exports = None

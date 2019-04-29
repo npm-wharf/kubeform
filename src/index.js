@@ -1,15 +1,17 @@
-const _ = require('fauxdash')
 const EventEmitter = require('events')
 const path = require('path')
 const fs = require('fs')
 const inquire = require('./commands/inquire')
 const log = require('pino')({ name: 'kubeform', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info' })
+const config = require('./config')
+const provider = require('./provider')
 
 class API extends EventEmitter {
   constructor (options) {
     super()
-    this.config = require('./config')(options)
-    this.provider = require('./provider')(this.config, this)
+    this.config = config(options)
+    const Provider = provider(this.config)
+    this.provider = new Provider(this.config, this)
   }
 
   create (options) {
@@ -65,7 +67,7 @@ class API extends EventEmitter {
       }
     }
 
-    let mixed = _.merge(defaults, data, options.tokens || {})
+    let mixed = Object.assign({}, defaults, data, options.tokens)
     const missing = REQUIRED_FIELDS.reduce((missing, required) => {
       let obj = mixed
       if (required.indexOf('.')) {

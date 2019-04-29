@@ -1,11 +1,15 @@
+const Google = require('./google')
+const Amazon = require('./amazon')
+const None = require('./none')
+
 module.exports = function (config, events) {
   switch (config.provider.toUpperCase()) {
     case 'GKE':
-      return require('./google')(config, events)
+      return Google
     case 'EKS':
-      return require('./amazon')(config, events)
+      return Amazon
     case 'NONE':
-      return require('./none')
+      return None
     default:
       throw new Error(`Provider ${config.provider} is not supported yet.`)
   }
