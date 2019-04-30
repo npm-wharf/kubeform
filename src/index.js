@@ -15,7 +15,7 @@ class API extends EventEmitter {
   }
 
   create (options) {
-    const {credentials, projectId, credFile} = this.config
+    const { credentials, projectId, credFile } = this.config
     if (credFile) {
       const credPath = path.resolve(credFile)
       log.info(`loading service account credentials from '${credPath}'`)

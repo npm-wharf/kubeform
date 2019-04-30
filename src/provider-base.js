@@ -1,7 +1,7 @@
 const getValidation = require('./validation')
 
 class BaseProvider {
-  constructor () {
+  constructor (options) {
     this.DEFAULTS = {
       managers: 1,
       manager: {

@@ -19,13 +19,12 @@ const EKSVersions = {
 // create, getRegions, getApiVerions, getZones
 class AWSProvider extends BaseProvider {
   constructor (config, events) {
-    super()
+    super(config)
     this.config = config || {}
     this.events = events || new Emitter()
     this.regions = this._generateZones(zones)
-    this.organziations = new AWS.Organizations()
-    this.ec2 = new AWS.EC2()
     this.project = null
+    this.cidrblock = '10.0.0.0/24'
   }
 
   async create (opts) {
@@ -44,6 +43,28 @@ class AWSProvider extends BaseProvider {
     }
   }
 
+  async createVPC () {
+    const opts = {
+      CidrBlock: this.cidrblock
+    }
+
+    this.vpc = this.ec2.createVpc(opts).promise()
+  }
+
+  getAWSAPI (api, options) {
+    let opts
+    if (options.credentials) {
+      opts = {
+        accessKeyId: options.credentials.accessKeyId,
+        secretAccessKey: options.credentials.secretAccessKey
+      }
+    }
+    return new AWS[api](opts)
+  }
+
+  // in aws this is an org user, which we create, and then
+  // we need to create a key for this user so that they can
+  // own the subsequent things they've created
   async createProject (options) {
     options.projectId = options.projectId || options.name
     const projectId = options.projectId
@@ -54,11 +75,18 @@ class AWSProvider extends BaseProvider {
       const opts = {
         AccountName: projectId,
         Email: '',
-        IamUserAccessToBilling: 'false',
+        IamUserAccessToBilling: 'DENY',
         RoleName: ''
       }
       try {
-        this.project = await this.organizations.createAccount(opts).promise()
+        const orgsAPI = this.getAWSAPI('Organizations', options)
+        const iamAPI = this.getAWSAPI('IAM', options)
+        this.project = await orgsAPI.createAccount(opts).promise()
+        const iamOpts = {
+          UserName: this.project.AccountName
+        }
+        const key = await iamAPI.createAccessKey(iamOpts).promise()
+        Object.assign(this.project, key)
       } catch (err) {
         const msg = `failed to create project ${projectId} with ${err.message}`
         log.fatal(msg)
@@ -69,8 +97,9 @@ class AWSProvider extends BaseProvider {
   }
 
   async getProject (options) {
+    const orgsAPI = this.getAWSAPI('Organizations', options)
     const projectId = options.projectId
-    const list = await this.organizations.listAccounts({})
+    const list = await orgsAPI.listAccounts({})
     return list.accounts.find((org) => org.name === projectId)
   }
 
