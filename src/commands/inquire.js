@@ -79,30 +79,6 @@ async function acquireTokens (kube, provider, tokens, defaults = {}) {
   return prompt(prompts)
 }
 
-function loadTokens (file) {
-  const tokenFile = path.resolve(file)
-  if (fs.existsSync(tokenFile)) {
-    const raw = fs.readFileSync(tokenFile, 'utf8')
-    try {
-      switch (path.extname(tokenFile)) {
-        case '.toml':
-          return toml.parse(raw)
-        case '.json':
-          return JSON.parse(raw)
-        case '.yml':
-        case '.yaml':
-          return yaml.safeLoad(raw)
-        default:
-          return toml.parse(raw)
-      }
-    } catch (e) {
-      console.log(`The token file '${tokenFile}' threw an error when parsing. Proceeding without it.`)
-    }
-  } else {
-    console.log(`The token file '${tokenFile}' does not exist or could not be read. Proceeding without it.`)
-  }
-}
-
 function readDefault (defaults, token) {
   let levels = token.split('.')
   let obj = defaults
@@ -116,8 +92,7 @@ function readDefault (defaults, token) {
 }
 
 module.exports = {
-  acquireTokens: acquireTokens,
-  loadTokens: loadTokens
+  acquireTokens: acquireTokens
 }
 
 const GEO_LIST = {
