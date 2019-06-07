@@ -610,5 +610,19 @@ describe('Google Cloud APIs', function () {
           .should.eventually.eql(['imaginary.googleapis.com'])
       })
     })
+
+    describe('and there are no enabled services', function () {
+      // Weirdly, Google's API returns a blank object with no services key!
+      before(function () {
+        scope.get(
+          '/projects/test-org/services?filter=state:ENABLED'
+        ).reply(200, JSON.stringify({}))
+      })
+
+      it('it should succeed', async function () {
+        await cloud.getEnabledServices('test-org')
+          .should.eventually.eql([])
+      })
+    })
   })
 })
