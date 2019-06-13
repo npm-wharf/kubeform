@@ -207,7 +207,7 @@ CloudAPI.prototype.getEnabledServices = function getEnabledServices (projectId) 
     method: 'GET',
     uri: `https://serviceusage.googleapis.com/v1/projects/${projectId}/services?filter=state:ENABLED`
   }).then(result => {
-    return result.services
+    return (result.services || [])
       .map(({name}) => name)
       .map(name => name.match(/\/([^/]+)$/)[1])
   })
