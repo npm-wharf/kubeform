@@ -45,7 +45,7 @@ async function handle (args) {
     level: args.verbose ? 'debug' : 'info',
     name: 'kubeform',
     prettyPrint: {
-      translateTime: true
+      ignore: 'pid,hostname,time'
     }
   })
 

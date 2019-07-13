@@ -3,7 +3,13 @@ const EventEmitter = require('events')
 const path = require('path')
 const fs = require('fs')
 const inquire = require('./commands/inquire')
-const log = require('pino')({name: 'kubeform', level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info'})
+const log = require('pino')({
+  name: 'kubeform',
+  level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL : 'info',
+  prettyPrint: {
+    ignore: 'pid,time,hostname'
+  }
+})
 
 class API extends EventEmitter {
   constructor (options) {
