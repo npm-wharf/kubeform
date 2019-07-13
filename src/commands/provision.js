@@ -63,11 +63,8 @@ async function handle (args) {
   }
 
   const log = pino({
-    level: args.verbose ? 'debug' : 'info',
     name: 'kubeform',
-    prettyPrint: {
-      ignore: 'pid,hostname,time'
-    }
+    ...require('../pino-config')
   })
 
   const kube = new Kubeform({

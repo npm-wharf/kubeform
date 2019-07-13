@@ -1,4 +1,4 @@
-const log = require('pino')({name: 'kubeform.google'})
+const log = require('pino')({name: 'kubeform.google', ...require('../pino-config')})
 const meta = require('./metadata')()
 const uuid = require('uuid')
 const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
