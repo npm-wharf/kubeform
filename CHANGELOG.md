@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.6.0"></a>
+# [1.6.0](https://github.com/npm-wharf/kubeform/compare/v1.4.3...v1.6.0) (2019-07-13)
+
+
+### Bug Fixes
+
+* actally pretty print ([f2f7d1f](https://github.com/npm-wharf/kubeform/commit/f2f7d1f))
+
+
+### Features
+
+* pretty print logs ([f47f5a4](https://github.com/npm-wharf/kubeform/commit/f47f5a4))
+
+
+
 <a name="1.5.0"></a>
 # [1.5.0](https://github.com/npm-wharf/kubeform/compare/v1.4.3...v1.5.0) (2019-07-13)
 
