@@ -217,7 +217,8 @@ const SIZE_REGEX = /^([0-9]+)(MB|GB)$/
 const VERSION_REGEX = /^[0-9]+[.][0-9]+[.][0-9]+[-]gke[.].+$/
 
 const VALIDATION = joi.object().keys({
-  name: joi.string().min(3).max(30).required(),
+  name: joi.string().required(),
+  clusterName: joi.string().min(3).max(30).required(),
   projectId: joi.string(),
   provider: joi.string(),
   version: joi.string().regex(VERSION_REGEX),
