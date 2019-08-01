@@ -295,7 +295,7 @@ function getClusterConfig (options) {
     projectId: options.projectId,
     zone: options.zones[0],
     cluster: {
-      name: options.name,
+      name: options.clusterName || options.name,
       description: options.description,
       nodePools: [
         getNodeConfig(options)
