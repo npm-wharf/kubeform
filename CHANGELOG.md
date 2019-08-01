@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.6.1"></a>
+## [1.6.1](https://github.com/npm-wharf/kubeform/compare/v1.6.0...v1.6.1) (2019-08-01)
+
+
+### Bug Fixes
+
+* allow a clusterName argument ([ba6fa86](https://github.com/npm-wharf/kubeform/commit/ba6fa86))
+
+
+
 <a name="1.6.0"></a>
 # [1.6.0](https://github.com/npm-wharf/kubeform/compare/v1.4.3...v1.6.0) (2019-07-13)
 
