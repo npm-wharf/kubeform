@@ -78,18 +78,19 @@ async function checkCluster (client, options) {
 }
 
 async function describeCluster (client, options) {
+  const clusterName = options.clusterName || options.name
   const request = {
     projectId: options.projectId,
     zone: options.zones[ 0 ],
-    clusterId: options.name
+    clusterId: clusterName
   }
   try {
-    log.info(`checking for existing cluster '${options.name}'`)
+    log.info(`checking for existing cluster '${clusterName}'`)
     const [ cluster ] = await client.getCluster(request)
     log.info(`cluster status is ${cluster.status}`)
     return cluster
   } catch (e) {
-    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${options.name}' with error: ${e.message}. If this is a new cluster, this error may be safely ignored.`
+    const msg = `failed to get cluster details for project '${options.projectId}' cluster '${clusterName}' with error: ${e.message}. If this is a new cluster, this error may be safely ignored.`
     log.warn(msg)
     return false
   }

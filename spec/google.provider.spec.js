@@ -48,6 +48,7 @@ describe('Google Provider', function () {
   before(function () {
     clusterOptions = {
       name: 'npme-test',
+      clusterName: 'npme-test',
       user: 'admin',
       password: 'admin', // somewhere, a infosec professional is screaming
       projectId: 'test-project',
